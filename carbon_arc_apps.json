@@ -1,0 +1,527 @@
+[
+  {
+    "name": "POS & Transactions Monitor",
+    "img": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop",
+    "img_dark": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop",
+    "img_light": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop",
+    "description": "Monitor retail sales flow, tickets, and channel mix. Track POS and credit card transactions with real-time analytics and performance metrics.",
+    "allowCustomization": true,
+    "tabs": {
+      "overview": {
+        "id": "overview",
+        "name": "overview",
+        "layout": [
+          {
+            "i": "sales_trend",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "avg_ticket_basket",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "channel_mix",
+            "x": 0,
+            "y": 27,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "stackedColumn",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "stackedColumn"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "geo_heatmap",
+            "x": 15,
+            "y": 12,
+            "w": 25,
+            "h": 15,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "column",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "column"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "sales_surprise",
+            "x": 0,
+            "y": 12,
+            "w": 15,
+            "h": 15,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "groupedColumn",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "groupedColumn"
+              }
+            },
+            "groups": []
+          }
+        ]
+      }
+    },
+    "groups": []
+  },
+  {
+    "name": "Ad Spend & Efficiency",
+    "img": "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop",
+    "img_dark": "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop",
+    "img_light": "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop",
+    "description": "Analyze advertising spend efficiency and ROAS. Track ad performance across platforms with attribution analysis and creative saturation insights.",
+    "allowCustomization": true,
+    "tabs": {
+      "overview": {
+        "id": "overview",
+        "name": "overview",
+        "layout": [
+          {
+            "i": "ad_spend_trend",
+            "x": 0,
+            "y": 0,
+            "w": 15,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "roas_panel",
+            "x": 15,
+            "y": 0,
+            "w": 25,
+            "h": 12,
+            "state": {
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "share_voice_sales",
+            "x": 0,
+            "y": 12,
+            "w": 40,
+            "h": 8,
+            "state": {
+              "params": {
+                "brands": [
+                  "Brand A",
+                  "Brand B",
+                  "Brand C",
+                  "Competitor X",
+                  "Competitor Y"
+                ]
+              },
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "bubble",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "bubble"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "creative_saturation",
+            "x": 0,
+            "y": 20,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "scatter",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "scatter"
+              }
+            },
+            "groups": []
+          }
+        ]
+      }
+    },
+    "groups": []
+  },
+  {
+    "name": "Digital Engagement",
+    "img": "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=400&h=300&fit=crop",
+    "img_dark": "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=400&h=300&fit=crop",
+    "img_light": "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=400&h=300&fit=crop",
+    "description": "Track digital engagement metrics and conversion funnels. Monitor app usage, web traffic, and user journey analytics.",
+    "allowCustomization": true,
+    "tabs": {
+      "overview": {
+        "id": "overview",
+        "name": "overview",
+        "layout": [
+          {
+            "i": "dau_mau_stickiness",
+            "x": 0,
+            "y": 0,
+            "w": 15,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "web_traffic_share",
+            "x": 15,
+            "y": 0,
+            "w": 25,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "stackedArea",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "stackedArea"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "engagement_funnel",
+            "x": 0,
+            "y": 12,
+            "w": 40,
+            "h": 9,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "column",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "column"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "review_ratings_pulse",
+            "x": 0,
+            "y": 21,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          }
+        ]
+      }
+    },
+    "groups": []
+  },
+  {
+    "name": "Media Performance",
+    "img": "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400&h=300&fit=crop",
+    "img_dark": "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400&h=300&fit=crop",
+    "img_light": "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400&h=300&fit=crop",
+    "description": "Monitor content performance across OTT platforms, box office, music streams, and live events. Track viewership and revenue metrics.",
+    "allowCustomization": true,
+    "tabs": {
+      "overview": {
+        "id": "overview",
+        "name": "overview",
+        "layout": [
+          {
+            "i": "ott_viewership",
+            "x": 0,
+            "y": 0,
+            "w": 15,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "groupedColumn",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "groupedColumn"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "box_office_momentum",
+            "x": 15,
+            "y": 0,
+            "w": 25,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "music_streams_tickets",
+            "x": 0,
+            "y": 12,
+            "w": 15,
+            "h": 15,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "scatter",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "scatter"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "platform_share",
+            "x": 15,
+            "y": 12,
+            "w": 25,
+            "h": 15,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "pie",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "pie"
+              }
+            },
+            "groups": []
+          }
+        ]
+      }
+    },
+    "groups": []
+  },
+  {
+    "name": "Mobility & Macro",
+    "img": "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400&h=300&fit=crop",
+    "img_dark": "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400&h=300&fit=crop",
+    "img_light": "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=400&h=300&fit=crop",
+    "description": "Track macro leading indicators including weather impact, building permits, vehicle registrations, and composite economic indices.",
+    "allowCustomization": true,
+    "tabs": {
+      "overview": {
+        "id": "overview",
+        "name": "overview",
+        "layout": [
+          {
+            "i": "weather_impact",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {
+                "geo": "midwest"
+              },
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "scatter",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "scatter"
+              }
+            },
+            "groups": [
+              "Group 1"
+            ]
+          },
+          {
+            "i": "vehicle_registrations",
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "stackedColumn",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "stackedColumn"
+              }
+            },
+            "groups": []
+          },
+          {
+            "i": "building_permits",
+            "x": 0,
+            "y": 11,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {
+                "geo": "midwest"
+              },
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": [
+              "Group 1"
+            ]
+          },
+          {
+            "i": "macro_composite",
+            "x": 0,
+            "y": 34,
+            "w": 40,
+            "h": 10,
+            "state": {
+              "chartModel": {
+                "modelType": "range",
+                "chartType": "line",
+                "chartOptions": {},
+                "suppressChartRanges": true
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              }
+            },
+            "groups": []
+          }
+        ]
+      }
+    },
+    "groups": [
+      {
+        "name": "Group 1",
+        "type": "param",
+        "paramName": "geo",
+        "defaultValue": "midwest"
+      }
+    ]
+  }
+]
