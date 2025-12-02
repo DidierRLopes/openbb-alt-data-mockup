@@ -280,24 +280,19 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                                     continue
                             
                             if isinstance(series_data, list):
-                                # Create descriptive column name from combo_dict
-                                name_parts = []
-                                
+                                # Create column name from values only
                                 # Sort keys for consistent naming
                                 sorted_keys = sorted(combo_dict.keys())
                                 
-                                for key in sorted_keys:
-                                    value = combo_dict[key]
-                                    # If only one parameter total, just use the value
-                                    if len(combo_dict) == 1:
-                                        name_parts.append(str(value))
-                                    else:
-                                        # Format as "param: value" for clarity when multiple params
-                                        param_label = key.replace('_', ' ').title()
-                                        name_parts.append(f"{param_label}: {value}")
+                                # Get the values in sorted order
+                                values = [str(combo_dict[key]) for key in sorted_keys]
                                 
-                                # Join all parts to create column name
-                                col_name = ' | '.join(name_parts) if name_parts else "value"
+                                # For single parameter, just use the value itself
+                                if len(values) == 1:
+                                    col_name = values[0]
+                                else:
+                                    # Multiple parameters - join with |
+                                    col_name = ' | '.join(values)
                                 
                                 # Store data by date
                                 for point in series_data:
