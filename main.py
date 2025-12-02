@@ -159,27 +159,13 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
         "data": {
             "table": {
                 "enableCharts": True,
-                "showAll": False,
+                "showAll": True,  # Show all data to handle dynamic columns
                 "chartView": {
                     "enabled": True,
                     "chartType": "line"
-                },
-                "columnsDefs": [
-                    {
-                        "field": "date",
-                        "headerName": "Date",
-                        "cellDataType": "dateString",
-                        "chartDataType": "category",  # Changed from "time" to "category"
-                        "width": 150
-                    },
-                    {
-                        "field": "value",
-                        "headerName": "Value",
-                        "cellDataType": "number",
-                        "chartDataType": "series",
-                        "width": 150
-                    }
-                ]
+                }
+                # Remove columnsDefs to let OpenBB auto-detect columns
+                # OpenBB will automatically set date as category and numeric columns as series
             }
         }
     }
@@ -224,36 +210,143 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
             **kwargs
         ):
             """Handle requests for this insight endpoint"""
-            # Start with all data for this insight
-            result_df = data_df.copy()
-            
-            # Filter by entity if provided
-            if entity_name:
-                result_df = result_df[result_df['entity_name'] == entity_name]
-            
-            # Apply additional filters
+            # Parse multiSelect parameters
+            multi_select_params = {}
             for key in filters_dict.keys():
                 param_value = kwargs.get(key)
                 if param_value:
-                    result_df = result_df[
-                        result_df['filters'].apply(
-                            lambda x: str(x.get(key)) == param_value if isinstance(x, dict) else False
-                        )
-                    ]
+                    # Split comma-separated values for multiSelect parameters
+                    multi_select_params[key] = [v.strip() for v in param_value.split(',')]
             
-            # Get the time series data
-            if not result_df.empty:
-                # Get the first matching series
-                series_data = result_df.iloc[0]['series']
+            # If we have multiple selections, we need to return a combined dataset
+            if any(len(values) > 1 for values in multi_select_params.values()):
+                # Collect data for each selected value combination
+                combined_data = {}
+                dates_set = set()
                 
-                # Return the series data directly (OpenBB expects a list of dicts)
-                if isinstance(series_data, list):
-                    return series_data
-                elif isinstance(series_data, str):
-                    try:
-                        return json.loads(series_data)
-                    except:
-                        return []
+                # Start with base filtering
+                base_df = data_df.copy()
+                if entity_name:
+                    base_df = base_df[base_df['entity_name'] == entity_name]
+                
+                # If we have multiple parameters with multiple values, we need cartesian product
+                from itertools import product
+                
+                # Separate multi-value params from single-value params
+                multi_params = {k: v for k, v in multi_select_params.items() if len(v) > 1}
+                single_params = {k: v for k, v in multi_select_params.items() if len(v) == 1}
+                
+                # Process each unique combination
+                all_combos = []
+                
+                if multi_params:
+                    # Get all combinations of multi-select values
+                    param_keys = list(multi_params.keys())
+                    param_values = [multi_params[k] for k in param_keys]
+                    
+                    # Generate all combinations
+                    for combo in product(*param_values):
+                        # Create filter dict for this combination
+                        combo_dict = dict(zip(param_keys, combo))
+                        # Merge with single params
+                        full_combo = {**combo_dict, **{k: v[0] for k, v in single_params.items()}}
+                        all_combos.append(full_combo)
+                else:
+                    # Just single params
+                    if single_params:
+                        all_combos.append({k: v[0] for k, v in single_params.items()})
+                
+                # Process each combination
+                for combo_dict in all_combos:
+                    if combo_dict:
+                        # Filter data for this exact combination
+                        filtered_df = base_df.copy()
+                        
+                        # Apply all filters
+                        for key, value in combo_dict.items():
+                            filtered_df = filtered_df[
+                                filtered_df['filters'].apply(
+                                    lambda x: str(x.get(key)) == value if isinstance(x, dict) else False
+                                )
+                            ]
+                        
+                        if not filtered_df.empty:
+                            # Get the series data
+                            series_data = filtered_df.iloc[0]['series']
+                            if isinstance(series_data, str):
+                                try:
+                                    series_data = json.loads(series_data)
+                                except:
+                                    continue
+                            
+                            if isinstance(series_data, list):
+                                # Create descriptive column name from combo_dict
+                                name_parts = []
+                                
+                                # Sort keys for consistent naming
+                                sorted_keys = sorted(combo_dict.keys())
+                                
+                                for key in sorted_keys:
+                                    value = combo_dict[key]
+                                    # If only one parameter total, just use the value
+                                    if len(combo_dict) == 1:
+                                        name_parts.append(str(value))
+                                    else:
+                                        # Format as "param: value" for clarity when multiple params
+                                        param_label = key.replace('_', ' ').title()
+                                        name_parts.append(f"{param_label}: {value}")
+                                
+                                # Join all parts to create column name
+                                col_name = ' | '.join(name_parts) if name_parts else "value"
+                                
+                                # Store data by date
+                                for point in series_data:
+                                    date = point.get('date')
+                                    value = point.get('value')
+                                    if date:
+                                        dates_set.add(date)
+                                        if date not in combined_data:
+                                            combined_data[date] = {}
+                                        combined_data[date][col_name] = value
+                
+                # Convert to list format expected by OpenBB
+                if combined_data:
+                    result = []
+                    for date in sorted(dates_set):
+                        row = {'date': date}
+                        row.update(combined_data.get(date, {}))
+                        result.append(row)
+                    return result
+                
+            else:
+                # Single selection - return as before
+                result_df = data_df.copy()
+                
+                # Filter by entity if provided
+                if entity_name:
+                    result_df = result_df[result_df['entity_name'] == entity_name]
+                
+                # Apply additional filters
+                for key, values in multi_select_params.items():
+                    if values:
+                        result_df = result_df[
+                            result_df['filters'].apply(
+                                lambda x: str(x.get(key)) == values[0] if isinstance(x, dict) else False
+                            )
+                        ]
+                
+                # Get the time series data
+                if not result_df.empty:
+                    series_data = result_df.iloc[0]['series']
+                    
+                    # Return the series data directly
+                    if isinstance(series_data, list):
+                        return series_data
+                    elif isinstance(series_data, str):
+                        try:
+                            return json.loads(series_data)
+                        except:
+                            return []
             
             return []
         
