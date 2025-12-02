@@ -514,29 +514,72 @@ def get_widgets():
     """Returns all registered widget configurations"""
     return WIDGETS
 
-# # Apps configuration endpoint - serve static file
-# @app.get("/apps.json")
-# def get_apps():
-#     """Returns the apps configuration for OpenBB Workspace"""
-#     apps_file = Path("apps.json")
-#     if apps_file.exists():
-#         try:
-#             with open(apps_file, 'r') as f:
-#                 return json.load(f)
-#         except Exception as e:
-#             print(f"Error reading apps.json: {e}")
+# Apps configuration endpoint - dynamically generate
+@app.get("/apps.json")
+def get_apps():
+    """Returns the apps configuration for OpenBB Workspace"""
     
-#     # Fallback if file doesn't exist
-#     return {
-#         "apps": [
-#             {
-#                 "name": "Carbon Arc Data",
-#                 "description": "Time series data from Carbon Arc frameworks",
-#                 "id": "carbon-arc",
-#                 "widgets": list(WIDGETS.keys())
-#             }
-#         ]
-#     }
+    # Get all non-status widgets (the insight endpoints)
+    insight_widgets = [w for w in WIDGETS.keys() if w != 'carbon_arc_status']
+    
+    # Build the frameworks tab layout with all insight widgets
+    frameworks_layout = []
+    y_position = 2
+    
+    for widget_id in insight_widgets:
+        widget_layout = {
+            "i": widget_id,
+            "x": 0,
+            "y": y_position,
+            "w": 40,
+            "h": 11,
+            "state": {
+                "chartModel": {
+                    "modelType": "range",
+                    "chartType": "line",
+                    "chartOptions": {},
+                    "suppressChartRanges": True
+                },
+                "chartView": {
+                    "enabled": True,
+                    "chartType": "line"
+                }
+            },
+            "groups": []
+        }
+        frameworks_layout.append(widget_layout)
+        y_position += 11  # Stack widgets vertically
+    
+    return {
+        "name": "Carbon Arc Frameworks",
+        "img": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+        "img_dark": "",
+        "img_light": "",
+        "description": "Carbon Arc frameworks",
+        "allowCustomization": True,
+        "tabs": {
+            "overview": {
+                "id": "overview",
+                "name": "Overview",
+                "layout": [
+                    {
+                        "i": "carbon_arc_status",
+                        "x": 0,
+                        "y": 2,
+                        "w": 40,
+                        "h": 25,
+                        "groups": []
+                    }
+                ]
+            },
+            "frameworks": {
+                "id": "frameworks",
+                "name": "Frameworks",
+                "layout": frameworks_layout
+            }
+        },
+        "groups": []
+    }
 
 # Helper endpoints for debugging
 @app.get("/insights")
