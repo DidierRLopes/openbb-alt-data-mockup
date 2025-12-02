@@ -178,6 +178,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
             "value": unique_entities[0] if unique_entities else "",  # Default to first entity
             "label": "Entity",
             "type": "text",
+            "multiSelect": True,  # Enable multiSelect for entities
             "show": True,  # Added show parameter
             "options": [{"value": name, "label": name} for name in unique_entities]
         }
@@ -205,18 +206,31 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
     # This is the key part - we need to create a proper function that FastAPI can use
     def make_endpoint_handler(data_df, filters_dict):
         """Create a closure that captures the data"""
+        # Get unique entities to check if entity should be included in column names
+        unique_entities = sorted(data_df['entity_name'].unique().tolist())
+        
         # Identify parameters with only one option (should be excluded from column names)
         single_option_params = set()
         for key, values in filters_dict.items():
             if len(values) == 1:
                 single_option_params.add(key)
         
+        # Check if entity_name has only one option
+        if len(unique_entities) == 1:
+            single_option_params.add('entity_name')
+        
         def endpoint_handler(
             entity_name: Optional[str] = None,
             **kwargs
         ):
             """Handle requests for this insight endpoint"""
-            # Parse multiSelect parameters
+            # Parse entity_name as multiSelect parameter
+            entity_names = []
+            if entity_name:
+                # Split comma-separated values for multiSelect entity parameter
+                entity_names = [v.strip() for v in entity_name.split(',')]
+            
+            # Parse multiSelect parameters for filters
             multi_select_params = {}
             for key in filters_dict.keys():
                 param_value = kwargs.get(key)
@@ -229,7 +243,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
             missing_params = []
             
             # Check entity_name
-            if not entity_name:
+            if not entity_names:
                 missing_params.append("entity_name")
             
             # Check filter parameters
@@ -254,43 +268,59 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                     detail=detail
                 )
             
+            # Check if we have multiple selections (including entity)
+            has_multiple_entities = len(entity_names) > 1
+            has_multiple_filters = any(len(values) > 1 for values in multi_select_params.values())
+            
             # If we have multiple selections, we need to return a combined dataset
-            if any(len(values) > 1 for values in multi_select_params.values()):
+            if has_multiple_entities or has_multiple_filters:
                 # Collect data for each selected value combination
                 combined_data = {}
                 dates_set = set()
                 
-                # Start with base filtering
+                # We don't pre-filter by entity anymore since it can be multiple
                 base_df = data_df.copy()
-                if entity_name:
-                    base_df = base_df[base_df['entity_name'] == entity_name]
                 
                 # If we have multiple parameters with multiple values, we need cartesian product
                 from itertools import product
                 
-                # Separate multi-value params from single-value params
+                # Include entity_names in the multi-params if there are multiple
+                all_multi_params = {}
+                if has_multiple_entities:
+                    all_multi_params['entity_name'] = entity_names
+                
+                # Add filter parameters
                 multi_params = {k: v for k, v in multi_select_params.items() if len(v) > 1}
                 single_params = {k: v for k, v in multi_select_params.items() if len(v) == 1}
+                all_multi_params.update(multi_params)
                 
                 # Process each unique combination
                 all_combos = []
                 
-                if multi_params:
-                    # Get all combinations of multi-select values
-                    param_keys = list(multi_params.keys())
-                    param_values = [multi_params[k] for k in param_keys]
+                if all_multi_params:
+                    # Get all combinations of multi-select values (including entity)
+                    param_keys = list(all_multi_params.keys())
+                    param_values = [all_multi_params[k] for k in param_keys]
                     
                     # Generate all combinations
                     for combo in product(*param_values):
-                        # Create filter dict for this combination
+                        # Create combo dict for this combination
                         combo_dict = dict(zip(param_keys, combo))
                         # Merge with single params
                         full_combo = {**combo_dict, **{k: v[0] for k, v in single_params.items()}}
+                        # Add single entity if not multiple
+                        if not has_multiple_entities and entity_names:
+                            full_combo['entity_name'] = entity_names[0]
                         all_combos.append(full_combo)
                 else:
-                    # Just single params
+                    # Just single params and single entity
+                    combo = {}
                     if single_params:
-                        all_combos.append({k: v[0] for k, v in single_params.items()})
+                        combo.update({k: v[0] for k, v in single_params.items()})
+                    if entity_names:
+                        combo['entity_name'] = entity_names[0]
+                    if combo:
+                        all_combos.append(combo)
                 
                 # Process each combination
                 for combo_dict in all_combos:
@@ -298,9 +328,13 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                         # Filter data for this exact combination
                         filtered_df = base_df.copy()
                         
-                        # Apply all filters
+                        # First filter by entity if specified
+                        if 'entity_name' in combo_dict:
+                            filtered_df = filtered_df[filtered_df['entity_name'] == combo_dict['entity_name']]
+                        
+                        # Apply other filters
                         for key, value in combo_dict.items():
-                            if 'filters' in filtered_df.columns:
+                            if key != 'entity_name' and 'filters' in filtered_df.columns:
                                 filtered_df = filtered_df[
                                     filtered_df['filters'].apply(
                                         lambda x: str(x.get(key)) == value if isinstance(x, dict) else False
@@ -321,8 +355,20 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                                 # Sort keys for consistent naming
                                 sorted_keys = sorted(combo_dict.keys())
                                 
-                                # Filter out parameters with only one option (don't include in column name)
-                                relevant_keys = [key for key in sorted_keys if key not in single_option_params]
+                                # Filter out parameters that don't vary in this request
+                                # Check which parameters actually have multiple values in all_combos
+                                varying_params = set()
+                                for param_key in sorted_keys:
+                                    unique_vals = set(c.get(param_key) for c in all_combos if c.get(param_key))
+                                    if len(unique_vals) > 1:
+                                        varying_params.add(param_key)
+                                
+                                # Also exclude parameters with only one option globally
+                                relevant_keys = [key for key in sorted_keys 
+                                               if key in varying_params or (key not in single_option_params and key not in varying_params)]
+                                
+                                # Actually, we only want keys that vary in this request
+                                relevant_keys = [key for key in sorted_keys if key in varying_params]
                                 
                                 # Get the values for relevant keys only
                                 values = [str(combo_dict[key]) for key in relevant_keys]
@@ -360,9 +406,9 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                 # Single selection - return as before
                 result_df = data_df.copy()
                 
-                # Filter by entity if provided
-                if entity_name:
-                    result_df = result_df[result_df['entity_name'] == entity_name]
+                # Filter by entity if provided (take first one since it's single selection)
+                if entity_names:
+                    result_df = result_df[result_df['entity_name'] == entity_names[0]]
                 
                 # Apply additional filters
                 for key, values in multi_select_params.items():
