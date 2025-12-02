@@ -4,17 +4,21 @@ Carbon Arc to OpenBB Workspace Integration
 Dynamically generates OpenBB widgets from Carbon Arc framework data
 """
 
-import json
+import asyncio
 import glob
-import pandas as pd
+import inspect
+import json
+from datetime import datetime
+from functools import wraps
+from itertools import product
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
+import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from datetime import datetime
-from functools import wraps
-import asyncio
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -293,8 +297,6 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                 base_df = data_df.copy()
                 
                 # If we have multiple parameters with multiple values, we need cartesian product
-                from itertools import product
-                
                 # Include entity_names in the multi-params if there are multiple
                 all_multi_params = {}
                 if has_multiple_entities:
@@ -451,7 +453,6 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
     handler = make_endpoint_handler(insight_data, filter_params)
     
     # Add dynamic parameters to the function signature
-    import inspect
     params = []
     params.append(
         inspect.Parameter(
@@ -660,5 +661,4 @@ Use the parameters to filter by entity and other dimensions.
 """
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8036)
