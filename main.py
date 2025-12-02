@@ -175,7 +175,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
         entity_param = {
             "paramName": "entity_name",
             "description": "Select entity",
-            "value": unique_entities[0] if unique_entities else "",
+            "value": unique_entities[0] if unique_entities else "",  # Default to first entity
             "label": "Entity",
             "type": "text",
             "show": True,  # Added show parameter
@@ -189,7 +189,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
             filter_param = {
                 "paramName": key,
                 "description": f"Filter by {key.replace('_', ' ')}",
-                "value": values[0] if values else "",
+                "value": values[0] if values else "",  # Default to first value
                 "label": key.replace('_', ' ').title(),
                 "type": "text",
                 "multiSelect": True,
@@ -217,6 +217,36 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                 if param_value:
                     # Split comma-separated values for multiSelect parameters
                     multi_select_params[key] = [v.strip() for v in param_value.split(',')]
+            
+            # Check if ALL required parameters have values
+            # We need entity_name AND all filter parameters to be provided
+            missing_params = []
+            
+            # Check entity_name
+            if not entity_name:
+                missing_params.append("entity_name")
+            
+            # Check filter parameters
+            for key in filters_dict.keys():
+                if not kwargs.get(key):
+                    missing_params.append(key)
+            
+            # If any parameters are missing, raise an error with details
+            if missing_params:
+                if len(missing_params) == 1:
+                    detail = f"Please select at least one {missing_params[0]}"
+                elif len(missing_params) == 2:
+                    detail = f"Please select at least one {missing_params[0]} and {missing_params[1]}"
+                else:
+                    # For 3 or more parameters
+                    last_param = missing_params[-1]
+                    other_params = ", ".join(missing_params[:-1])
+                    detail = f"Please select at least one {other_params} and {last_param}"
+                
+                raise HTTPException(
+                    status_code=400,
+                    detail=detail
+                )
             
             # If we have multiple selections, we need to return a combined dataset
             if any(len(values) > 1 for values in multi_select_params.values()):
