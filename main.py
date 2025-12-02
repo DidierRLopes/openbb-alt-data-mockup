@@ -205,6 +205,12 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
     # This is the key part - we need to create a proper function that FastAPI can use
     def make_endpoint_handler(data_df, filters_dict):
         """Create a closure that captures the data"""
+        # Identify parameters with only one option (should be excluded from column names)
+        single_option_params = set()
+        for key, values in filters_dict.items():
+            if len(values) == 1:
+                single_option_params.add(key)
+        
         def endpoint_handler(
             entity_name: Optional[str] = None,
             **kwargs
@@ -294,11 +300,12 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                         
                         # Apply all filters
                         for key, value in combo_dict.items():
-                            filtered_df = filtered_df[
-                                filtered_df['filters'].apply(
-                                    lambda x: str(x.get(key)) == value if isinstance(x, dict) else False
-                                )
-                            ]
+                            if 'filters' in filtered_df.columns:
+                                filtered_df = filtered_df[
+                                    filtered_df['filters'].apply(
+                                        lambda x: str(x.get(key)) == value if isinstance(x, dict) else False
+                                    )
+                                ]
                         
                         if not filtered_df.empty:
                             # Get the series data
@@ -314,11 +321,17 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                                 # Sort keys for consistent naming
                                 sorted_keys = sorted(combo_dict.keys())
                                 
-                                # Get the values in sorted order
-                                values = [str(combo_dict[key]) for key in sorted_keys]
+                                # Filter out parameters with only one option (don't include in column name)
+                                relevant_keys = [key for key in sorted_keys if key not in single_option_params]
                                 
+                                # Get the values for relevant keys only
+                                values = [str(combo_dict[key]) for key in relevant_keys]
+                                
+                                # If no relevant values (all params have single options), use a default name
+                                if not values:
+                                    col_name = "value"
                                 # For single parameter, just use the value itself
-                                if len(values) == 1:
+                                elif len(values) == 1:
                                     col_name = values[0]
                                 else:
                                     # Multiple parameters - join with |
@@ -353,7 +366,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                 
                 # Apply additional filters
                 for key, values in multi_select_params.items():
-                    if values:
+                    if values and 'filters' in result_df.columns:
                         result_df = result_df[
                             result_df['filters'].apply(
                                 lambda x: str(x.get(key)) == values[0] if isinstance(x, dict) else False
