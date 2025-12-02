@@ -146,6 +146,17 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
     for key in filter_params:
         filter_params[key] = sorted(list(filter_params[key]))
     
+    # Remove _id parameters if there's a corresponding parameter without _id
+    keys_to_remove = []
+    for key in filter_params:
+        if key.endswith('_id'):
+            base_key = key[:-3]  # Remove '_id' suffix
+            if base_key in filter_params:
+                keys_to_remove.append(key)
+    
+    for key in keys_to_remove:
+        del filter_params[key]
+    
     # Create widget configuration
     widget_config = {
         "name": insight_name.replace('_', ' ').title(),
