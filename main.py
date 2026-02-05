@@ -217,7 +217,8 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                 "showAll": True,  # Show all data to handle dynamic columns
                 "chartView": {
                     "enabled": True,
-                    "chartType": "line"
+                    "chartType": "line",
+                    "ignoreCellRange": True
                 }
                 # Remove columnsDefs to let OpenBB auto-detect columns
                 # OpenBB will automatically set date as category and numeric columns as series
@@ -769,7 +770,7 @@ def get_apps():
                                     }
                                 }
                             },
-                            "groups": ["Group 1", "Group 2"]
+                            "groups": ["Group 1"]
                         },
                         {
                             "i": "grouped-framework-comparison",
@@ -811,7 +812,7 @@ def get_apps():
                                     "chartType": "line"
                                 }
                             },
-                            "groups": ["Group 1", "Group 2"]
+                            "groups": ["Group 1"]
                         }
                     ]
                 }
@@ -820,12 +821,6 @@ def get_apps():
                 {
                     "name": "Group 1",
                     "type": "param",
-                    "paramName": "group_name",
-                    "defaultValue": "Theo"
-                },
-                {
-                    "name": "Group 2",
-                    "type": "endpointParam",
                     "paramName": "group_name",
                     "defaultValue": "Theo"
                 }
@@ -1210,31 +1205,38 @@ def get_grouped_framework_comparison(
 
     # Find group by name if provided
     group = None
+    group_frameworks = []
     if group_name:
         group = next((g for g in GROUPS.values() if g["name"] == group_name), None)
-
-    # Determine which series to use
-    if series_name:
-        # Parse comma-separated series names
-        selected_series = [s.strip() for s in series_name.split(',')]
-        # If group specified, validate frameworks are in group
         if group:
-            group_frameworks = set(group.get("frameworks", []))
-            selected_series = [s for s in selected_series if s in group_frameworks]
-    elif group:
-        # No series specified but group is - automatically use ALL frameworks from group
-        selected_series = group.get("frameworks", [])
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Please select a group or at least one framework to compare"
-        )
+            group_frameworks = group.get("frameworks", [])
 
+    # Parse series_name - handle empty strings, whitespace, etc.
+    selected_series = []
+    if series_name and series_name.strip():
+        selected_series = [s.strip() for s in series_name.split(',') if s.strip()]
+
+    # If a group is selected, filter selected_series to only include frameworks in that group
+    # This handles the case where old series_name values persist from a previous group selection
+    if group and selected_series:
+        selected_series = [s for s in selected_series if s in group_frameworks]
+
+    # If no valid series after filtering (or none selected), use ALL frameworks from group
+    if not selected_series and group:
+        selected_series = group_frameworks
+
+    # If still no series and no group, error
     if not selected_series:
-        raise HTTPException(
-            status_code=400,
-            detail="No frameworks found. Please select a group with frameworks or select frameworks manually."
-        )
+        if not group_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Please select a group or at least one framework to compare"
+            )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Group '{group_name}' has no frameworks. Please add frameworks to this group."
+            )
 
     # Collect data for each selected series
     combined_data = {}
