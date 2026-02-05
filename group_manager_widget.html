@@ -506,7 +506,7 @@
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-lg);
       width: 90%;
-      max-width: 480px;
+      max-width: 700px;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
@@ -566,6 +566,199 @@
       padding: 16px;
       overflow: visible;
       flex: 1;
+    }
+
+    .modal-columns {
+      display: flex;
+      gap: 20px;
+      height: 280px;
+    }
+
+    .modal-column-left {
+      flex: 0 0 200px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-column-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .form-group-grow {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-textarea {
+      flex: 1;
+      width: 100%;
+      min-height: 80px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: var(--font-family);
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius);
+      color: var(--foreground);
+      resize: none;
+      transition: border-color var(--transition);
+    }
+
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--brand-main);
+    }
+
+    .form-textarea::placeholder {
+      color: var(--foreground-subtle);
+    }
+
+    /* Frameworks Panel */
+    .frameworks-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius);
+      background: var(--input-bg);
+      overflow: hidden;
+    }
+
+    .frameworks-search {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--background-alt);
+    }
+
+    .frameworks-search .form-input {
+      height: 28px;
+      font-size: 11px;
+    }
+
+    .frameworks-list {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 120px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .frameworks-list-item {
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--foreground);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition);
+    }
+
+    .frameworks-list-item:hover {
+      background: var(--background-hover);
+    }
+
+    .frameworks-list-item.disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .frameworks-list-item.disabled:hover {
+      background: transparent;
+    }
+
+    .frameworks-list-empty {
+      padding: 12px;
+      text-align: center;
+      color: var(--foreground-subtle);
+      font-size: 11px;
+    }
+
+    .frameworks-selected {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      background: var(--background);
+    }
+
+    .frameworks-selected-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--foreground-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .frameworks-selected-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .frameworks-selected-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      background: rgba(0, 170, 255, 0.1);
+      border-radius: var(--radius);
+      color: var(--foreground);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .frameworks-selected-item:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .dark .frameworks-selected-item {
+      background: rgba(0, 170, 255, 0.15);
+    }
+
+    .dark .frameworks-selected-item:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .frameworks-selected-item-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .frameworks-selected-item-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      color: var(--foreground-subtle);
+      flex-shrink: 0;
+      border-radius: var(--radius);
+      margin: -2px -4px -2px 0;
+    }
+
+    .frameworks-selected-item-remove:hover {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .frameworks-selected-item-remove svg {
+      width: 12px;
+      height: 12px;
+      pointer-events: none;
+    }
+
+    .frameworks-selected-empty {
+      color: var(--foreground-subtle);
+      font-size: 11px;
+      font-style: italic;
     }
 
     .modal-footer {
@@ -1027,28 +1220,27 @@
         </button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Name</label>
-          <input type="text" class="form-input" id="groupName" placeholder="Enter group name">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Description</label>
-          <input type="text" class="form-input" id="groupDescription" placeholder="Optional description">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Frameworks</label>
-          <div class="dropdown-container" id="frameworkDropdown">
-            <div class="dropdown-trigger" id="dropdownTrigger" onclick="toggleDropdown()">
-              <span class="dropdown-placeholder" id="dropdownPlaceholder">Select frameworks...</span>
-              <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9l6 6 6-6"/>
-              </svg>
+        <div class="modal-columns">
+          <div class="modal-column-left">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input type="text" class="form-input" id="groupName" placeholder="Enter group name">
             </div>
-            <div class="dropdown-menu" id="dropdownMenu">
-              <div class="dropdown-search">
-                <input type="text" id="frameworkSearch" placeholder="Search frameworks..." oninput="filterFrameworks()">
+            <div class="form-group form-group-grow">
+              <label class="form-label">Description</label>
+              <textarea class="form-textarea" id="groupDescription" placeholder="Optional description"></textarea>
+            </div>
+          </div>
+          <div class="modal-column-right">
+            <div class="form-group form-group-grow">
+              <label class="form-label">Frameworks</label>
+              <div class="frameworks-panel">
+                <div class="frameworks-search">
+                  <input type="text" class="form-input" id="frameworkSearch" placeholder="Search to add..." oninput="filterFrameworks()">
+                </div>
+                <div class="frameworks-list" id="frameworkOptions"></div>
+                <div class="frameworks-selected" id="selectedFrameworksList"></div>
               </div>
-              <div class="dropdown-options" id="frameworkOptions"></div>
             </div>
           </div>
         </div>
@@ -1217,20 +1409,12 @@
             </td>
             <td class="cell-date">${createdDate}</td>
             <td class="cell-actions">
-              <div class="action-buttons">
-                <button class="btn-icon" onclick="openEditModal('${group.group_id}')" title="Edit">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="btn-icon" onclick="confirmDelete('${group.group_id}', '${escapeHtml(group.name)}')" title="Delete">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                  </svg>
-                </button>
-              </div>
+              <button class="btn-icon" onclick="confirmDelete('${group.group_id}', '${escapeHtml(group.name)}')" title="Delete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                </svg>
+              </button>
             </td>
           </tr>
         `;
@@ -1244,7 +1428,7 @@
               <th style="width: 200px">Description</th>
               <th>Frameworks</th>
               <th style="width: 100px">Created</th>
-              <th style="width: 80px"></th>
+              <th style="width: 40px"></th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -1258,8 +1442,10 @@
       document.getElementById('modalTitle').textContent = 'New Group';
       document.getElementById('groupName').value = '';
       document.getElementById('groupDescription').value = '';
+      document.getElementById('frameworkSearch').value = '';
       selectedFrameworks = [];
       renderSelectedFrameworks();
+      renderFrameworkOptions();
       document.getElementById('modalOverlay').classList.add('active');
       document.getElementById('groupName').focus();
     }
@@ -1272,15 +1458,16 @@
       document.getElementById('modalTitle').textContent = 'Edit Group';
       document.getElementById('groupName').value = group.name;
       document.getElementById('groupDescription').value = group.description || '';
+      document.getElementById('frameworkSearch').value = '';
       selectedFrameworks = [...group.frameworks];
       renderSelectedFrameworks();
+      renderFrameworkOptions();
       document.getElementById('modalOverlay').classList.add('active');
       document.getElementById('groupName').focus();
     }
 
     function closeModal() {
       document.getElementById('modalOverlay').classList.remove('active');
-      closeDropdown();
       editingGroupId = null;
     }
 
@@ -1290,54 +1477,41 @@
       }
     }
 
-    // Dropdown Functions
-    function toggleDropdown() {
-      const menu = document.getElementById('dropdownMenu');
-      const trigger = document.getElementById('dropdownTrigger');
-      const isOpen = menu.classList.contains('open');
-
-      if (isOpen) {
-        closeDropdown();
-      } else {
-        menu.classList.add('open');
-        trigger.classList.add('active');
-        renderFrameworkOptions();
-        document.getElementById('frameworkSearch').value = '';
-        document.getElementById('frameworkSearch').focus();
-      }
-    }
-
-    function closeDropdown() {
-      document.getElementById('dropdownMenu').classList.remove('open');
-      document.getElementById('dropdownTrigger').classList.remove('active');
-    }
-
     function renderFrameworkOptions(filter = '') {
       const container = document.getElementById('frameworkOptions');
       const filtered = frameworks.filter(f => {
         const value = typeof f === 'object' ? f.value : f;
         return value.toLowerCase().includes(filter.toLowerCase());
-      });
+      }).slice(0, 50); // Limit for performance
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="dropdown-empty">No frameworks found</div>';
+        container.innerHTML = '<div class="frameworks-list-empty">No frameworks found</div>';
         return;
       }
 
-      container.innerHTML = filtered.map(f => {
+      container.innerHTML = filtered.map((f, idx) => {
         const value = typeof f === 'object' ? f.value : f;
         const isSelected = selectedFrameworks.includes(value);
         return `
-          <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleFramework('${escapeHtml(value)}')">
-            <div class="dropdown-checkbox">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            </div>
-            <span class="dropdown-option-text" title="${escapeHtml(value)}">${escapeHtml(value)}</span>
+          <div class="frameworks-list-item ${isSelected ? 'disabled' : ''}" data-index="${idx}" title="${escapeHtml(value)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;color:var(--brand-main)">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(value)}</span>
           </div>
         `;
       }).join('');
+
+      // Add click handlers via event delegation
+      container.onclick = function(e) {
+        const item = e.target.closest('.frameworks-list-item');
+        if (item && !item.classList.contains('disabled')) {
+          const idx = parseInt(item.dataset.index);
+          const f = filtered[idx];
+          const value = typeof f === 'object' ? f.value : f;
+          addFramework(value);
+        }
+      };
     }
 
     function filterFrameworks() {
@@ -1345,52 +1519,58 @@
       renderFrameworkOptions(filter);
     }
 
-    function toggleFramework(value) {
-      const index = selectedFrameworks.indexOf(value);
-      if (index === -1) {
-        selectedFrameworks.push(value);
-      } else {
-        selectedFrameworks.splice(index, 1);
-      }
-      renderSelectedFrameworks();
-      renderFrameworkOptions(document.getElementById('frameworkSearch').value);
-    }
-
-    function removeFramework(value, event) {
-      event.stopPropagation();
+    function removeFramework(value) {
       selectedFrameworks = selectedFrameworks.filter(f => f !== value);
       renderSelectedFrameworks();
       renderFrameworkOptions(document.getElementById('frameworkSearch').value);
     }
 
     function renderSelectedFrameworks() {
-      const trigger = document.getElementById('dropdownTrigger');
-      const placeholder = document.getElementById('dropdownPlaceholder');
-
-      // Remove existing tags
-      trigger.querySelectorAll('.selected-tag').forEach(el => el.remove());
+      const container = document.getElementById('selectedFrameworksList');
 
       if (selectedFrameworks.length === 0) {
-        placeholder.style.display = '';
+        container.innerHTML = `
+          <div class="frameworks-selected-label">Selected (0)</div>
+          <div class="frameworks-selected-empty">No frameworks selected</div>
+        `;
         return;
       }
 
-      placeholder.style.display = 'none';
+      container.innerHTML = `
+        <div class="frameworks-selected-label">Selected (${selectedFrameworks.length})</div>
+        <div class="frameworks-selected-list">
+          ${selectedFrameworks.map((f, idx) => `
+            <div class="frameworks-selected-item" data-index="${idx}" title="${escapeHtml(f)}">
+              <span class="frameworks-selected-item-text">${escapeHtml(f)}</span>
+              <span class="frameworks-selected-item-remove" data-index="${idx}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </span>
+            </div>
+          `).join('')}
+        </div>
+      `;
 
-      selectedFrameworks.forEach(f => {
-        const tag = document.createElement('span');
-        tag.className = 'selected-tag';
-        const shortName = f.split(' | ').slice(0, 2).join(' | ');
-        tag.innerHTML = `
-          <span class="selected-tag-text" title="${escapeHtml(f)}">${escapeHtml(shortName)}</span>
-          <span class="selected-tag-remove" onclick="removeFramework('${escapeHtml(f)}', event)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-          </span>
-        `;
-        trigger.insertBefore(tag, trigger.querySelector('.dropdown-arrow'));
-      });
+      // Add click handler - click anywhere on item to remove
+      container.onclick = function(e) {
+        const item = e.target.closest('.frameworks-selected-item');
+        if (item) {
+          const idx = parseInt(item.dataset.index);
+          const value = selectedFrameworks[idx];
+          if (value) {
+            removeFramework(value);
+          }
+        }
+      };
+    }
+
+    function addFramework(value) {
+      if (!selectedFrameworks.includes(value)) {
+        selectedFrameworks.push(value);
+        renderSelectedFrameworks();
+        renderFrameworkOptions(document.getElementById('frameworkSearch').value);
+      }
     }
 
     // Save Group
@@ -1593,7 +1773,7 @@
         closeModal();
         closeConfirmModal();
         hideContextMenu();
-        closeDropdown();
+        closeInlineAutocomplete();
       }
     }
 
