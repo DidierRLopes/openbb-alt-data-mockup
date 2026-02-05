@@ -49,6 +49,7 @@ app.add_middleware(
 WIDGETS = {}
 FRAMEWORK_DATA = {}
 INSIGHT_GROUPS = {}
+ALL_SERIES = {}  # Store all series by series_name for Framework Comparison
 
 def register_widget(widget_config):
     """
@@ -80,41 +81,48 @@ def load_framework_data():
     """
     Load all framework JSON files and process the data
     """
-    global FRAMEWORK_DATA, INSIGHT_GROUPS
-    
+    global FRAMEWORK_DATA, INSIGHT_GROUPS, ALL_SERIES
+
     # Find all framework JSON files
     framework_files = glob.glob('frameworks/**/*.json', recursive=True)
-    
+
     # Also check for framework-* directories
     framework_files.extend(glob.glob('framework-*/*.json', recursive=True))
-    
+
     all_series_data = []
-    
+
     print(f"Found {len(framework_files)} framework files")
-    
+
     for file_path in framework_files:
         try:
             with open(file_path, 'r') as f:
                 data = json.load(f)
-            
+
             # Extract time series data
             series_list = data.get('data', [])
             all_series_data.extend(series_list)
         except Exception as e:
             print(f"Error loading {file_path}: {e}")
             continue
-    
+
     # Convert to DataFrame for easier processing
     if all_series_data:
         df = pd.DataFrame(all_series_data)
-        
+
         # Group by insight type
         for insight_name, group_df in df.groupby('insight'):
             INSIGHT_GROUPS[insight_name] = group_df.reset_index(drop=True)
-            
+
+        # Build ALL_SERIES dictionary keyed by series_name
+        for item in all_series_data:
+            series_name = item.get('series_name')
+            if series_name:
+                ALL_SERIES[series_name] = item
+
         FRAMEWORK_DATA['all_data'] = df
         print(f"Loaded {len(all_series_data)} time series from {len(framework_files)} files")
         print(f"Found {len(INSIGHT_GROUPS)} unique insight types: {list(INSIGHT_GROUPS.keys())}")
+        print(f"Found {len(ALL_SERIES)} unique series names")
     else:
         print("No framework data found")
 
@@ -170,7 +178,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
         "gridData": {"w": 20, "h": 10},
         "type": "table",
         "category": category,
-        "params": [],
+        "params": [[], []],  # [[entity params], [filter params]]
         "data": {
             "table": {
                 "enableCharts": True,
@@ -185,7 +193,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
         }
     }
     
-    # Add entity parameter if there are multiple entities
+    # Add entity parameter if there are multiple entities (first array)
     if len(unique_entities) > 0:
         entity_param = {
             "paramName": "entity_name",
@@ -197,10 +205,11 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
             "show": True,  # Added show parameter
             "options": [{"value": name, "label": name} for name in unique_entities]
         }
-        widget_config["params"].append(entity_param)
+        widget_config["params"][0].append(entity_param)
     
-    # Add filter parameters
-    for key, values in filter_params.items():
+    # Add filter parameters (sorted alphabetically) to second array
+    for key in sorted(filter_params.keys()):
+        values = filter_params[key]
         if values:
             filter_param = {
                 "paramName": key,
@@ -212,7 +221,7 @@ def create_single_insight_endpoint(insight_name: str, insight_data: pd.DataFrame
                 "show": True,  # Added show parameter
                 "options": [{"value": v, "label": v} for v in values]
             }
-            widget_config["params"].append(filter_param)
+            widget_config["params"][1].append(filter_param)
     
     # Register the widget
     WIDGETS[endpoint_slug] = widget_config
@@ -493,6 +502,7 @@ async def startup_event():
     """Load framework data and create endpoints on startup"""
     load_framework_data()
     create_insight_endpoints()
+    update_framework_comparison_params()  # Populate series options for comparison widget
     print(f"\nStartup complete!")
     print(f"Total widgets registered: {len(WIDGETS)}")
     print(f"Available endpoints: {list(WIDGETS.keys())}")
@@ -519,14 +529,17 @@ def get_widgets():
 @app.get("/apps.json")
 def get_apps():
     """Returns the apps configuration for OpenBB Workspace"""
-    
-    # Get all non-status widgets (the insight endpoints)
-    insight_widgets = [w for w in WIDGETS.keys() if w != 'carbon_arc_status']
-    
+
+    # Widgets to exclude from the frameworks tab (special widgets)
+    excluded_widgets = {'carbon_arc_status', 'framework-comparison', 'series-list'}
+
+    # Get all insight widgets (excluding special widgets)
+    insight_widgets = [w for w in WIDGETS.keys() if w not in excluded_widgets]
+
     # Build the frameworks tab layout with all insight widgets
     frameworks_layout = []
-    y_position = 2
-    
+    y_position = 0
+
     for widget_id in insight_widgets:
         widget_layout = {
             "i": widget_id,
@@ -550,37 +563,123 @@ def get_apps():
         }
         frameworks_layout.append(widget_layout)
         y_position += 11  # Stack widgets vertically
-    
-    return {
-        "name": "Carbon Arc Frameworks",
-        "img": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
-        "img_dark": "",
-        "img_light": "",
-        "description": "Carbon Arc frameworks",
-        "allowCustomization": True,
-        "tabs": {
-            "overview": {
-                "id": "overview",
-                "name": "Overview",
-                "layout": [
-                    {
-                        "i": "carbon_arc_status",
-                        "x": 0,
-                        "y": 2,
-                        "w": 40,
-                        "h": 25,
-                        "groups": []
-                    }
-                ]
+
+    # Return array of apps
+    return [
+        # App 1: Carbon Arc Frameworks
+        {
+            "name": "Carbon Arc Frameworks",
+            "img": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+            "img_dark": "",
+            "img_light": "",
+            "description": "Carbon Arc frameworks",
+            "allowCustomization": True,
+            "tabs": {
+                "overview": {
+                    "id": "overview",
+                    "name": "Overview",
+                    "layout": [
+                        {
+                            "i": "carbon_arc_status",
+                            "x": 0,
+                            "y": 0,
+                            "w": 40,
+                            "h": 25,
+                            "groups": []
+                        }
+                    ]
+                },
+                "frameworks": {
+                    "id": "frameworks",
+                    "name": "Frameworks",
+                    "layout": frameworks_layout
+                }
             },
-            "frameworks": {
-                "id": "frameworks",
-                "name": "Frameworks",
-                "layout": frameworks_layout
-            }
+            "groups": []
         },
-        "groups": []
-    }
+        # App 2: Framework Comparison
+        {
+            "name": "Framework Comparison",
+            "img": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+            "img_dark": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+            "img_light": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+            "description": "Compare framework series side by side",
+            "allowCustomization": True,
+            "tabs": {
+                "": {
+                    "id": "",
+                    "name": "",
+                    "layout": [
+                        {
+                            "i": "framework-comparison",
+                            "x": 0,
+                            "y": 15,
+                            "w": 40,
+                            "h": 15,
+                            "state": {
+                                "chartModel": {
+                                    "modelType": "range",
+                                    "chartType": "line",
+                                    "chartOptions": {},
+                                    "suppressChartRanges": True,
+                                    "cellRange": {
+                                        "columns": [
+                                            "date",
+                                            "AE + Aerie | App Downloads | iOS | 16 | Canada | v2025.11.1 | Reinstated On: 2025-12-01"
+                                        ]
+                                    }
+                                },
+                                "chartView": {
+                                    "enabled": True,
+                                    "chartType": "line"
+                                },
+                                "columnState": {
+                                    "default": {
+                                        "columnOrder": {
+                                            "orderedColIds": [
+                                                "date",
+                                                "Dell | Advertising Count | Desktop Site | v2025.11.1 | Reinstated On: 2025-11-29",
+                                                "Amazon | Average Website Traffic | Mobile Site | Male | Gender | v2025.11.1 | Reinstated On: 2025-12-01"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "groups": []
+                        },
+                        {
+                            "i": "series-list",
+                            "x": 0,
+                            "y": 0,
+                            "w": 40,
+                            "h": 15,
+                            "state": {
+                                "chartView": {
+                                    "enabled": False,
+                                    "chartType": "line"
+                                },
+                                "columnState": {
+                                    "default": {
+                                        "columnOrder": {
+                                            "orderedColIds": [
+                                                "entity_name",
+                                                "insight",
+                                                "category",
+                                                "data_points",
+                                                "series_name"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "groups": []
+                        }
+                    ]
+                }
+            },
+            "groups": []
+        }
+    ]
 
 # Helper endpoints for debugging
 @app.get("/insights")
@@ -623,6 +722,150 @@ def get_data_summary():
     
     return summary
 
+
+# ==================== Framework Comparison App ====================
+
+# Series List Widget - shows all available series names
+@register_widget({
+    "name": "Series List",
+    "description": "List of all available framework series",
+    "type": "table",
+    "endpoint": "series-list",
+    "gridData": {"w": 40, "h": 15},
+    "data": {
+        "table": {
+            "enableCharts": False,
+            "showAll": True
+        }
+    }
+})
+@app.get("/series-list")
+def get_series_list():
+    """Returns a list of all available series names with metadata"""
+    if not ALL_SERIES:
+        return []
+
+    result = []
+    for series_name, item in ALL_SERIES.items():
+        # Extract metadata from the item
+        result.append({
+            "series_name": series_name,
+            "entity_name": item.get("entity_name", ""),
+            "insight": item.get("insight", ""),
+            "category": item.get("entity_representation", ""),
+            "data_points": len(item.get("series", []))
+        })
+
+    # Sort by series_name
+    result.sort(key=lambda x: x["series_name"])
+    return result
+
+
+# Framework Comparison Widget
+@register_widget({
+    "name": "Framework Comparison",
+    "description": "Compare multiple framework series side by side",
+    "type": "table",
+    "endpoint": "framework-comparison",
+    "gridData": {"w": 40, "h": 15},
+    "params": [
+        {
+            "paramName": "series_name",
+            "description": "Select series to compare",
+            "label": "Series",
+            "type": "endpoint",
+            "optionsEndpoint": "/series-options",
+            "multiSelect": True,
+            "style": {
+                "popupWidth": 900
+            },
+            "show": True
+        }
+    ],
+    "data": {
+        "table": {
+            "enableCharts": True,
+            "showAll": True,
+            "chartView": {
+                "enabled": True,
+                "chartType": "line"
+            }
+        }
+    }
+})
+@app.get("/framework-comparison")
+def get_framework_comparison(series_name: Optional[str] = Query(default=None, description="Comma-separated series names to compare")):
+    """Compare multiple framework series side by side with date as the common index"""
+    if not series_name:
+        raise HTTPException(
+            status_code=400,
+            detail="Please select at least one series to compare"
+        )
+
+    # Parse comma-separated series names
+    selected_series = [s.strip() for s in series_name.split(',')]
+
+    # Collect data for each selected series
+    combined_data = {}
+    dates_set = set()
+
+    for sname in selected_series:
+        if sname in ALL_SERIES:
+            item = ALL_SERIES[sname]
+            series_data = item.get('series', [])
+
+            if isinstance(series_data, str):
+                try:
+                    series_data = json.loads(series_data)
+                except:
+                    continue
+
+            if isinstance(series_data, list):
+                for point in series_data:
+                    date = point.get('date')
+                    value = point.get('value')
+                    if date:
+                        dates_set.add(date)
+                        if date not in combined_data:
+                            combined_data[date] = {}
+                        combined_data[date][sname] = value
+
+    # Convert to list format
+    if combined_data:
+        result = []
+        for date in sorted(dates_set):
+            row = {'date': date}
+            row.update(combined_data.get(date, {}))
+            result.append(row)
+        return result
+
+    return []
+
+
+# Endpoint to get series options for the Framework Comparison widget
+@app.get("/series-options")
+def get_series_options():
+    """Returns all available series names as options for the multi-select"""
+    options = [{"value": name, "label": name} for name in sorted(ALL_SERIES.keys())]
+    return options
+
+
+# Update the Framework Comparison widget params on startup
+def update_framework_comparison_params():
+    """Update the Framework Comparison widget with available series options"""
+    if "framework-comparison" in WIDGETS:
+        options = [{"value": name, "label": name} for name in sorted(ALL_SERIES.keys())]
+        # Update the series_name param options (flat array structure)
+        params = WIDGETS["framework-comparison"].get("params", [])
+        for param in params:
+            if isinstance(param, dict) and param.get("paramName") == "series_name":
+                param["options"] = options
+                # Set default to first option if available
+                if options:
+                    param["value"] = options[0]["value"]
+                break
+
+
 # Status widget
 @register_widget({
     "name": "Carbon Arc Status",
@@ -661,4 +904,4 @@ Use the parameters to filter by entity and other dimensions.
 """
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8036)
+    uvicorn.run(app, host="0.0.0.0", port=8037)
