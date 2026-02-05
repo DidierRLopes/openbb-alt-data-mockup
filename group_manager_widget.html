@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Group Manager</title>
+  <style>
+    /* OpenBB Design System Variables */
+    :root {
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --brand-main: #00AAFF;
+      --brand-lighter: #66CCFF;
+      --brand-darker: #006699;
+      --radius: 4px;
+      --radius-lg: 8px;
+      --transition: 0.1s ease;
+    }
+
+    /* Light Theme (default) */
+    :root {
+      --background: #ffffff;
+      --background-alt: #f6f6f6;
+      --background-hover: #ebebed;
+      --foreground: #070707;
+      --foreground-muted: #5a5a5a;
+      --foreground-subtle: #808080;
+      --border: #dcdcdc;
+      --border-hover: #c8c8c8;
+      --input-bg: #ffffff;
+      --input-border: #dcdcdc;
+      --shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.10);
+      --shadow-lg: 2px 4px 15px 0px rgba(0, 0, 0, 0.10);
+      --scrollbar-track: #eaeaea;
+      --scrollbar-thumb: #a2a2a2;
+      --success: #22C55E;
+      --danger: #EF4444;
+      --row-odd: #f6f6f6;
+      --row-even: #ffffff;
+    }
+
+    /* Dark Theme */
+    .dark {
+      --background: #151518;
+      --background-alt: #1f1e23;
+      --background-hover: #2a2a31;
+      --foreground: #f5f5f6;
+      --foreground-muted: #a2a2a2;
+      --foreground-subtle: #6d6e74;
+      --border: #36363f;
+      --border-hover: #46464f;
+      --input-bg: #212127;
+      --input-border: #36363f;
+      --shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.40);
+      --shadow-lg: 2px 4px 15px 0px rgba(0, 0, 0, 0.60);
+      --scrollbar-track: #46464f;
+      --scrollbar-thumb: #6d6e74;
+      --success: #22C55E;
+      --danger: #EF4444;
+      --row-odd: #2a2a31;
+      --row-even: #1f1e23;
+    }
+
+    /* Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: 12px;
+      line-height: 1.5;
+      background: var(--background);
+      color: var(--foreground);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+      border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--foreground-muted);
+    }
+
+    /* Container */
+    .container {
+      padding: 8px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+
+    /* Button Base */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 26px;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: var(--font-family);
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--brand-main);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--brand-darker);
+    }
+
+    .btn-secondary {
+      background: var(--background-alt);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--background-hover);
+      border-color: var(--border-hover);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--foreground-muted);
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--background-hover);
+      color: var(--foreground);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #ffffff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #DC2626;
+    }
+
+    .btn-icon {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--background-alt);
+      border-radius: var(--radius);
+      color: var(--foreground-muted);
+    }
+
+    .btn-icon:hover {
+      background: var(--background-hover);
+      color: var(--foreground);
+    }
+
+    .btn svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Table Container */
+    .table-container {
+      flex: 1;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    th {
+      background: var(--background-alt);
+      color: var(--foreground);
+      font-weight: 500;
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:nth-child(odd) td {
+      background: var(--row-odd);
+    }
+
+    tr:nth-child(even) td {
+      background: var(--row-even);
+    }
+
+    tr:hover td {
+      background: var(--background-hover);
+    }
+
+    tr.editing td {
+      background: var(--background-hover);
+    }
+
+    /* Cell styles */
+    .cell-name {
+      font-weight: 500;
+      color: var(--foreground);
+      cursor: pointer;
+    }
+
+    .cell-name:hover {
+      color: var(--brand-main);
+    }
+
+    .cell-description {
+      color: var(--foreground-muted);
+      cursor: pointer;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell-description:hover {
+      color: var(--foreground);
+    }
+
+    .cell-frameworks {
+      max-width: 300px;
+    }
+
+    .framework-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .framework-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      font-size: 10px;
+      background: rgba(0, 170, 255, 0.15);
+      color: var(--brand-main);
+      border-radius: 10px;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dark .framework-tag {
+      background: rgba(0, 170, 255, 0.2);
+      color: var(--brand-lighter);
+    }
+
+    .framework-more {
+      font-size: 10px;
+      color: var(--foreground-subtle);
+    }
+
+    .cell-date {
+      color: var(--foreground-subtle);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .cell-actions {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      color: var(--foreground-subtle);
+      text-align: center;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .dark .modal-overlay {
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    /* Modal */
+    .modal {
+      background: var(--background);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 90%;
+      max-width: 480px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: visible;
+      animation: modalIn 0.15s ease-out;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+
+    .modal-close {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--foreground-muted);
+      cursor: pointer;
+      border-radius: var(--radius);
+    }
+
+    .modal-close:hover {
+      background: var(--background-hover);
+      color: var(--foreground);
+    }
+
+    .modal-close svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .modal-body {
+      padding: 16px;
+      overflow: visible;
+      flex: 1;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--foreground-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .dark .form-label {
+      color: var(--foreground-subtle);
+    }
+
+    .form-input {
+      width: 100%;
+      height: 32px;
+      padding: 0 10px;
+      font-size: 12px;
+      font-family: var(--font-family);
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius);
+      color: var(--foreground);
+      transition: border-color var(--transition);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--brand-main);
+    }
+
+    .form-input::placeholder {
+      color: var(--foreground-subtle);
+    }
+
+    /* Multi-select Dropdown */
+    .dropdown-container {
+      position: relative;
+    }
+
+    .dropdown-trigger {
+      width: 100%;
+      min-height: 32px;
+      padding: 4px 30px 4px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color var(--transition);
+    }
+
+    .dropdown-trigger:hover {
+      border-color: var(--border-hover);
+    }
+
+    .dropdown-trigger.active {
+      border-color: var(--brand-main);
+    }
+
+    .dropdown-arrow {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--foreground-subtle);
+      pointer-events: none;
+    }
+
+    .dropdown-placeholder {
+      color: var(--foreground-subtle);
+      font-size: 12px;
+    }
+
+    .selected-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      background: rgba(0, 170, 255, 0.15);
+      color: var(--brand-main);
+      border-radius: 10px;
+      max-width: 200px;
+    }
+
+    .dark .selected-tag {
+      background: rgba(0, 170, 255, 0.2);
+      color: var(--brand-lighter);
+    }
+
+    .selected-tag-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .selected-tag-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 12px;
+      height: 12px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .selected-tag-remove:hover {
+      opacity: 1;
+    }
+
+    .selected-tag-remove svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      max-height: 240px;
+      overflow: hidden;
+      display: none;
+      z-index: 200;
+    }
+
+    .dropdown-menu.open {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dropdown-search {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dropdown-search input {
+      width: 100%;
+      height: 28px;
+      padding: 0 8px;
+      font-size: 12px;
+      font-family: var(--font-family);
+      background: var(--background-alt);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius);
+      color: var(--foreground);
+    }
+
+    .dropdown-search input:focus {
+      outline: none;
+      border-color: var(--brand-main);
+    }
+
+    .dropdown-options {
+      overflow-y: auto;
+      max-height: 180px;
+    }
+
+    .dropdown-option {
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--foreground);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background var(--transition);
+    }
+
+    .dropdown-option:hover {
+      background: var(--background-hover);
+    }
+
+    .dropdown-option.selected {
+      background: rgba(0, 170, 255, 0.1);
+    }
+
+    .dropdown-checkbox {
+      width: 14px;
+      height: 14px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .dropdown-option.selected .dropdown-checkbox {
+      background: var(--brand-main);
+      border-color: var(--brand-main);
+    }
+
+    .dropdown-checkbox svg {
+      width: 10px;
+      height: 10px;
+      color: #ffffff;
+      display: none;
+    }
+
+    .dropdown-option.selected .dropdown-checkbox svg {
+      display: block;
+    }
+
+    .dropdown-option-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dropdown-empty {
+      padding: 16px;
+      text-align: center;
+      color: var(--foreground-subtle);
+      font-size: 12px;
+    }
+
+    /* Confirm Modal */
+    .confirm-modal .modal {
+      max-width: 360px;
+    }
+
+    .confirm-message {
+      font-size: 13px;
+      color: var(--foreground);
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .confirm-modal .modal-footer {
+      justify-content: center;
+    }
+
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      min-width: 140px;
+      padding: 4px;
+      z-index: 1000;
+      display: none;
+    }
+
+    .context-menu.active {
+      display: block;
+    }
+
+    .context-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--foreground);
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background var(--transition);
+    }
+
+    .context-menu-item:hover {
+      background: var(--background-hover);
+    }
+
+    .context-menu-item.danger {
+      color: var(--danger);
+    }
+
+    .context-menu-item svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      font-size: 12px;
+      color: var(--foreground);
+      animation: toastIn 0.2s ease-out;
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .toast.success {
+      border-left: 3px solid var(--success);
+    }
+
+    .toast.error {
+      border-left: 3px solid var(--danger);
+    }
+
+    .toast-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .toast.success .toast-icon {
+      color: var(--success);
+    }
+
+    .toast.error .toast-icon {
+      color: var(--danger);
+    }
+
+    /* Inline Edit Input */
+    .inline-edit-input {
+      width: 100%;
+      height: 24px;
+      padding: 0 6px;
+      font-size: 12px;
+      font-family: var(--font-family);
+      background: var(--input-bg);
+      border: 1px solid var(--brand-main);
+      border-radius: var(--radius);
+      color: var(--foreground);
+    }
+
+    .inline-edit-input:focus {
+      outline: none;
+    }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .loading-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--foreground-subtle);
+      border-radius: 50%;
+      animation: loadingDot 1s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .loading-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes loadingDot {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="header-title">Framework Groups</span>
+      <button class="btn btn-primary" onclick="openCreateModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        New Group
+      </button>
+    </div>
+
+    <div class="table-container" id="tableContainer">
+      <div class="loading" id="loadingState">
+        <div class="loading-dots">
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">New Group</span>
+        <button class="modal-close" onclick="closeModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-input" id="groupName" placeholder="Enter group name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input type="text" class="form-input" id="groupDescription" placeholder="Optional description">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Frameworks</label>
+          <div class="dropdown-container" id="frameworkDropdown">
+            <div class="dropdown-trigger" id="dropdownTrigger" onclick="toggleDropdown()">
+              <span class="dropdown-placeholder" id="dropdownPlaceholder">Select frameworks...</span>
+              <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+              <div class="dropdown-search">
+                <input type="text" id="frameworkSearch" placeholder="Search frameworks..." oninput="filterFrameworks()">
+              </div>
+              <div class="dropdown-options" id="frameworkOptions"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveGroup()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Delete Modal -->
+  <div class="modal-overlay confirm-modal" id="confirmOverlay" onclick="closeConfirmOnOverlay(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">Delete Group</span>
+        <button class="modal-close" onclick="closeConfirmModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-message" id="confirmMessage">Are you sure you want to delete this group?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="deleteGroup()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" onclick="editFromContext()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Edit
+    </div>
+    <div class="context-menu-item" onclick="duplicateFromContext()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </svg>
+      Duplicate
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" onclick="deleteFromContext()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+      </svg>
+      Delete
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // API Base URL - will be injected by backend
+    const API_BASE = getApiBase();
+
+    function getApiBase() {
+      // Default for development
+      return 'http://127.0.0.1:8037';
+    }
+
+    // State
+    let groups = [];
+    let frameworks = [];
+    let selectedFrameworks = [];
+    let editingGroupId = null;
+    let contextGroupId = null;
+
+    // Theme
+    const urlParams = new URLSearchParams(window.location.search);
+    const theme = urlParams.get('theme') || 'dark';
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Promise.all([loadGroups(), loadFrameworks()]);
+      document.addEventListener('click', hideContextMenu);
+      document.addEventListener('keydown', handleKeydown);
+    });
+
+    // Data Loading
+    async function loadGroups() {
+      try {
+        const response = await fetch(`${API_BASE}/groups`);
+        groups = await response.json();
+        renderTable();
+      } catch (error) {
+        console.error('Failed to load groups:', error);
+        showToast('Failed to load groups', 'error');
+      }
+    }
+
+    async function loadFrameworks() {
+      try {
+        const response = await fetch(`${API_BASE}/series-options`);
+        frameworks = await response.json();
+      } catch (error) {
+        console.error('Failed to load frameworks:', error);
+      }
+    }
+
+    // Render Table
+    function renderTable() {
+      const container = document.getElementById('tableContainer');
+
+      if (groups.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            <p class="empty-state-text">No groups created yet</p>
+            <button class="btn btn-primary" onclick="openCreateModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Create First Group
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const rows = groups.map(group => {
+        const frameworkTags = group.frameworks.slice(0, 2).map(f => {
+          const shortName = f.split(' | ').slice(0, 2).join(' | ');
+          return `<span class="framework-tag" title="${escapeHtml(f)}">${escapeHtml(shortName)}</span>`;
+        }).join('');
+        const moreCount = group.frameworks.length > 2 ? `<span class="framework-more">+${group.frameworks.length - 2} more</span>` : '';
+        const createdDate = new Date(group.created_at).toLocaleDateString();
+
+        return `
+          <tr data-id="${group.group_id}" oncontextmenu="showContextMenu(event, '${group.group_id}')">
+            <td>
+              <span class="cell-name" onclick="startInlineEdit(this, '${group.group_id}', 'name')">${escapeHtml(group.name)}</span>
+            </td>
+            <td>
+              <span class="cell-description" onclick="startInlineEdit(this, '${group.group_id}', 'description')">${escapeHtml(group.description) || '—'}</span>
+            </td>
+            <td class="cell-frameworks">
+              <div class="framework-tags">${frameworkTags}${moreCount}</div>
+            </td>
+            <td class="cell-date">${createdDate}</td>
+            <td class="cell-actions">
+              <div class="action-buttons">
+                <button class="btn-icon" onclick="openEditModal('${group.group_id}')" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-icon" onclick="confirmDelete('${group.group_id}', '${escapeHtml(group.name)}')" title="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 150px">Name</th>
+              <th style="width: 200px">Description</th>
+              <th>Frameworks</th>
+              <th style="width: 100px">Created</th>
+              <th style="width: 80px"></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    // Modal Functions
+    function openCreateModal() {
+      editingGroupId = null;
+      document.getElementById('modalTitle').textContent = 'New Group';
+      document.getElementById('groupName').value = '';
+      document.getElementById('groupDescription').value = '';
+      selectedFrameworks = [];
+      renderSelectedFrameworks();
+      document.getElementById('modalOverlay').classList.add('active');
+      document.getElementById('groupName').focus();
+    }
+
+    function openEditModal(groupId) {
+      const group = groups.find(g => g.group_id === groupId);
+      if (!group) return;
+
+      editingGroupId = groupId;
+      document.getElementById('modalTitle').textContent = 'Edit Group';
+      document.getElementById('groupName').value = group.name;
+      document.getElementById('groupDescription').value = group.description || '';
+      selectedFrameworks = [...group.frameworks];
+      renderSelectedFrameworks();
+      document.getElementById('modalOverlay').classList.add('active');
+      document.getElementById('groupName').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+      closeDropdown();
+      editingGroupId = null;
+    }
+
+    function closeModalOnOverlay(event) {
+      if (event.target === event.currentTarget) {
+        closeModal();
+      }
+    }
+
+    // Dropdown Functions
+    function toggleDropdown() {
+      const menu = document.getElementById('dropdownMenu');
+      const trigger = document.getElementById('dropdownTrigger');
+      const isOpen = menu.classList.contains('open');
+
+      if (isOpen) {
+        closeDropdown();
+      } else {
+        menu.classList.add('open');
+        trigger.classList.add('active');
+        renderFrameworkOptions();
+        document.getElementById('frameworkSearch').value = '';
+        document.getElementById('frameworkSearch').focus();
+      }
+    }
+
+    function closeDropdown() {
+      document.getElementById('dropdownMenu').classList.remove('open');
+      document.getElementById('dropdownTrigger').classList.remove('active');
+    }
+
+    function renderFrameworkOptions(filter = '') {
+      const container = document.getElementById('frameworkOptions');
+      const filtered = frameworks.filter(f => {
+        const value = typeof f === 'object' ? f.value : f;
+        return value.toLowerCase().includes(filter.toLowerCase());
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="dropdown-empty">No frameworks found</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(f => {
+        const value = typeof f === 'object' ? f.value : f;
+        const isSelected = selectedFrameworks.includes(value);
+        return `
+          <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleFramework('${escapeHtml(value)}')">
+            <div class="dropdown-checkbox">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <span class="dropdown-option-text" title="${escapeHtml(value)}">${escapeHtml(value)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterFrameworks() {
+      const filter = document.getElementById('frameworkSearch').value;
+      renderFrameworkOptions(filter);
+    }
+
+    function toggleFramework(value) {
+      const index = selectedFrameworks.indexOf(value);
+      if (index === -1) {
+        selectedFrameworks.push(value);
+      } else {
+        selectedFrameworks.splice(index, 1);
+      }
+      renderSelectedFrameworks();
+      renderFrameworkOptions(document.getElementById('frameworkSearch').value);
+    }
+
+    function removeFramework(value, event) {
+      event.stopPropagation();
+      selectedFrameworks = selectedFrameworks.filter(f => f !== value);
+      renderSelectedFrameworks();
+      renderFrameworkOptions(document.getElementById('frameworkSearch').value);
+    }
+
+    function renderSelectedFrameworks() {
+      const trigger = document.getElementById('dropdownTrigger');
+      const placeholder = document.getElementById('dropdownPlaceholder');
+
+      // Remove existing tags
+      trigger.querySelectorAll('.selected-tag').forEach(el => el.remove());
+
+      if (selectedFrameworks.length === 0) {
+        placeholder.style.display = '';
+        return;
+      }
+
+      placeholder.style.display = 'none';
+
+      selectedFrameworks.forEach(f => {
+        const tag = document.createElement('span');
+        tag.className = 'selected-tag';
+        const shortName = f.split(' | ').slice(0, 2).join(' | ');
+        tag.innerHTML = `
+          <span class="selected-tag-text" title="${escapeHtml(f)}">${escapeHtml(shortName)}</span>
+          <span class="selected-tag-remove" onclick="removeFramework('${escapeHtml(f)}', event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </span>
+        `;
+        trigger.insertBefore(tag, trigger.querySelector('.dropdown-arrow'));
+      });
+    }
+
+    // Save Group
+    async function saveGroup() {
+      const name = document.getElementById('groupName').value.trim();
+      const description = document.getElementById('groupDescription').value.trim();
+
+      if (!name) {
+        showToast('Please enter a group name', 'error');
+        return;
+      }
+
+      const params = new URLSearchParams({
+        name,
+        description,
+        frameworks: selectedFrameworks.join(',')
+      });
+
+      try {
+        let response;
+        if (editingGroupId) {
+          response = await fetch(`${API_BASE}/groups/${editingGroupId}?${params}`, { method: 'PUT' });
+        } else {
+          response = await fetch(`${API_BASE}/groups?${params}`, { method: 'POST' });
+        }
+
+        if (response.ok) {
+          showToast(editingGroupId ? 'Group updated' : 'Group created', 'success');
+          closeModal();
+          await loadGroups();
+        } else {
+          showToast('Failed to save group', 'error');
+        }
+      } catch (error) {
+        showToast('Failed to save group', 'error');
+      }
+    }
+
+    // Context Menu
+    function showContextMenu(event, groupId) {
+      event.preventDefault();
+      contextGroupId = groupId;
+
+      const menu = document.getElementById('contextMenu');
+      menu.style.left = `${event.clientX}px`;
+      menu.style.top = `${event.clientY}px`;
+      menu.classList.add('active');
+    }
+
+    function hideContextMenu() {
+      document.getElementById('contextMenu').classList.remove('active');
+    }
+
+    function editFromContext() {
+      hideContextMenu();
+      openEditModal(contextGroupId);
+    }
+
+    function duplicateFromContext() {
+      hideContextMenu();
+      duplicateGroup(contextGroupId);
+    }
+
+    function deleteFromContext() {
+      hideContextMenu();
+      const group = groups.find(g => g.group_id === contextGroupId);
+      if (group) {
+        confirmDelete(contextGroupId, group.name);
+      }
+    }
+
+    // Duplicate
+    async function duplicateGroup(groupId) {
+      const group = groups.find(g => g.group_id === groupId);
+      if (!group) return;
+
+      const params = new URLSearchParams({
+        name: `${group.name} (Copy)`,
+        description: group.description || '',
+        frameworks: group.frameworks.join(',')
+      });
+
+      try {
+        const response = await fetch(`${API_BASE}/groups?${params}`, { method: 'POST' });
+        if (response.ok) {
+          showToast('Group duplicated', 'success');
+          await loadGroups();
+        }
+      } catch (error) {
+        showToast('Failed to duplicate group', 'error');
+      }
+    }
+
+    // Delete
+    function confirmDelete(groupId, groupName) {
+      contextGroupId = groupId;
+      document.getElementById('confirmMessage').textContent = `Delete "${groupName}"? This action cannot be undone.`;
+      document.getElementById('confirmOverlay').classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmOverlay').classList.remove('active');
+    }
+
+    function closeConfirmOnOverlay(event) {
+      if (event.target === event.currentTarget) {
+        closeConfirmModal();
+      }
+    }
+
+    async function deleteGroup() {
+      try {
+        const response = await fetch(`${API_BASE}/groups/${contextGroupId}`, { method: 'DELETE' });
+        if (response.ok) {
+          showToast('Group deleted', 'success');
+          closeConfirmModal();
+          await loadGroups();
+        }
+      } catch (error) {
+        showToast('Failed to delete group', 'error');
+      }
+    }
+
+    // Inline Edit
+    function startInlineEdit(element, groupId, field) {
+      const row = element.closest('tr');
+      if (row.classList.contains('editing')) return;
+
+      row.classList.add('editing');
+      const currentValue = element.textContent === '—' ? '' : element.textContent;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'inline-edit-input';
+      input.value = currentValue;
+
+      element.style.display = 'none';
+      element.parentNode.insertBefore(input, element.nextSibling);
+      input.focus();
+      input.select();
+
+      const save = async () => {
+        const newValue = input.value.trim();
+        input.remove();
+        element.style.display = '';
+        row.classList.remove('editing');
+
+        if (newValue !== currentValue) {
+          const params = new URLSearchParams({ [field]: newValue });
+          try {
+            const response = await fetch(`${API_BASE}/groups/${groupId}?${params}`, { method: 'PUT' });
+            if (response.ok) {
+              element.textContent = newValue || '—';
+              showToast('Updated', 'success');
+              await loadGroups();
+            }
+          } catch (error) {
+            showToast('Failed to update', 'error');
+          }
+        }
+      };
+
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+        } else if (e.key === 'Escape') {
+          input.value = currentValue;
+          input.blur();
+        }
+      });
+    }
+
+    // Toast
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const icons = {
+        success: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        error: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
+        info: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
+      };
+
+      toast.innerHTML = `${icons[type] || icons.info}<span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+
+    // Keyboard
+    function handleKeydown(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+        closeConfirmModal();
+        hideContextMenu();
+        closeDropdown();
+      }
+    }
+
+    // Utility
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
