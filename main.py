@@ -8,6 +8,7 @@ import asyncio
 import glob
 import inspect
 import json
+import uuid
 from datetime import datetime
 from functools import wraps
 from itertools import product
@@ -50,6 +51,37 @@ WIDGETS = {}
 FRAMEWORK_DATA = {}
 INSIGHT_GROUPS = {}
 ALL_SERIES = {}  # Store all series by series_name for Framework Comparison
+
+# ==============================================================================
+# GROUP FRAMEWORK APP - Storage and Persistence
+# ==============================================================================
+GROUPS = {}  # Store framework groups: {group_id: {name, description, frameworks}}
+GROUPS_FILE = Path(__file__).parent / "groups.json"
+
+
+def load_groups():
+    """Load groups from JSON file"""
+    global GROUPS
+    if GROUPS_FILE.exists():
+        try:
+            with open(GROUPS_FILE, 'r') as f:
+                GROUPS = json.load(f)
+            print(f"Loaded {len(GROUPS)} groups from {GROUPS_FILE}")
+        except Exception as e:
+            print(f"Error loading groups: {e}")
+            GROUPS = {}
+    else:
+        GROUPS = {}
+
+
+def save_groups():
+    """Save groups to JSON file"""
+    try:
+        with open(GROUPS_FILE, 'w') as f:
+            json.dump(GROUPS, f, indent=2)
+        print(f"Saved {len(GROUPS)} groups to {GROUPS_FILE}")
+    except Exception as e:
+        print(f"Error saving groups: {e}")
 
 def register_widget(widget_config):
     """
@@ -503,9 +535,11 @@ async def startup_event():
     load_framework_data()
     create_insight_endpoints()
     update_framework_comparison_params()  # Populate series options for comparison widget
+    load_groups()  # Load saved groups for Group Framework app
     print(f"\nStartup complete!")
     print(f"Total widgets registered: {len(WIDGETS)}")
     print(f"Available endpoints: {list(WIDGETS.keys())}")
+    print(f"Groups loaded: {len(GROUPS)}")
 
 # Root endpoint
 @app.get("/")
@@ -530,8 +564,17 @@ def get_widgets():
 def get_apps():
     """Returns the apps configuration for OpenBB Workspace"""
 
-    # Widgets to exclude from the frameworks tab (special widgets)
-    excluded_widgets = {'carbon_arc_status', 'framework-comparison', 'series-list'}
+    # Widgets to exclude from the frameworks tab (special widgets and Group Framework widgets)
+    excluded_widgets = {
+        'carbon_arc_status',
+        'framework-comparison',
+        'series-list',
+        # Group Framework app widgets - keep separate from Carbon Arc Frameworks
+        'group-manager',
+        'update-group-info',
+        'groups-list',
+        'grouped-framework-comparison'
+    }
 
     # Get all insight widgets (excluding special widgets)
     insight_widgets = [w for w in WIDGETS.keys() if w not in excluded_widgets]
@@ -678,6 +721,163 @@ def get_apps():
                 }
             },
             "groups": []
+        },
+        # App 3: Group Framework
+        {
+            "name": "Group Framework",
+            "img": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+            "img_dark": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+            "img_light": "https://media.licdn.com/dms/image/v2/D4E0BAQFBGi28odVUxg/company-logo_200_200/company-logo_200_200/0/1734471549764/carbonarc_logo?e=2147483647&v=beta&t=DlOWF5Orlwx_6NTDE7Xf8ivJwDSXgpug6y9ORIlOfNk",
+            "description": "Organize frameworks into groups for easier comparison",
+            "allowCustomization": True,
+            "tabs": {
+                "": {
+                    "id": "",
+                    "name": "",
+                    "layout": [
+                        {
+                            "i": "group-manager",
+                            "x": 0,
+                            "y": 0,
+                            "w": 40,
+                            "h": 9,
+                            "state": {
+                                "chartView": {
+                                    "enabled": False,
+                                    "chartType": "line"
+                                },
+                                "columnState": {
+                                    "default": {
+                                        "columnOrder": {
+                                            "orderedColIds": [
+                                                "name",
+                                                "description",
+                                                "frameworks"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "groups": []
+                        },
+                        {
+                            "i": "groups-list",
+                            "x": 0,
+                            "y": 16,
+                            "w": 40,
+                            "h": 12,
+                            "state": {
+                                "chartView": {
+                                    "enabled": False,
+                                    "chartType": "line"
+                                },
+                                "columnState": {
+                                    "default": {
+                                        "columnPinning": {
+                                            "leftColIds": ["name"],
+                                            "rightColIds": []
+                                        },
+                                        "columnOrder": {
+                                            "orderedColIds": [
+                                                "name",
+                                                "description",
+                                                "framework_count",
+                                                "created_at"
+                                            ]
+                                        },
+                                        "rowSelection": ["1"]
+                                    }
+                                }
+                            },
+                            "groups": ["Group 1", "Group 2"]
+                        },
+                        {
+                            "i": "update-group-info",
+                            "x": 0,
+                            "y": 9,
+                            "w": 40,
+                            "h": 7,
+                            "state": {
+                                "chartView": {
+                                    "enabled": False,
+                                    "chartType": "line"
+                                },
+                                "columnState": {
+                                    "default": {
+                                        "columnOrder": {
+                                            "orderedColIds": [
+                                                "group_id",
+                                                "name",
+                                                "description",
+                                                "frameworks",
+                                                "framework_count"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "groups": []
+                        },
+                        {
+                            "i": "grouped-framework-comparison",
+                            "x": 0,
+                            "y": 28,
+                            "w": 40,
+                            "h": 15,
+                            "state": {
+                                "paramOrder": ["group_name", "series_name"],
+                                "params": {
+                                    "group_name": "Theo",
+                                    "series_name": [
+                                        "Amazon | Average Website Traffic | Desktop Site | Male | Gender | v2025.11.1 | Reinstated On: 2025-12-01",
+                                        "Brilliant Earth | Advertising Count | Facebook | v2025.11.1 | Reinstated On: 2025-11-29",
+                                        "Amazon | Average Website Traffic | Mobile Site | Female | Gender | v2025.11.1 | Reinstated On: 2025-12-01"
+                                    ]
+                                },
+                                "chartModel": {
+                                    "modelType": "range",
+                                    "chartType": "line",
+                                    "chartOptions": {
+                                        "line": {
+                                            "series": {
+                                                "label": {"enabled": False},
+                                                "tooltip": {"enabled": True}
+                                            }
+                                        }
+                                    },
+                                    "suppressChartRanges": True,
+                                    "cellRange": {
+                                        "columns": [
+                                            "date",
+                                            "Amazon | Average Website Traffic | Desktop Site | Male | Gender | v2025.11.1 | Reinstated On: 2025-12-01",
+                                            "Amazon | Average Website Traffic | Mobile Site | Female | Gender | v2025.11.1 | Reinstated On: 2025-12-01"
+                                        ]
+                                    }
+                                },
+                                "chartView": {
+                                    "enabled": True,
+                                    "chartType": "line"
+                                }
+                            },
+                            "groups": ["Group 1", "Group 2"]
+                        }
+                    ]
+                }
+            },
+            "groups": [
+                {
+                    "name": "Group 1",
+                    "type": "param",
+                    "paramName": "group_name",
+                    "defaultValue": "Theo"
+                },
+                {
+                    "name": "Group 2",
+                    "type": "endpointParam",
+                    "paramName": "group_name",
+                    "defaultValue": "Theo"
+                }
+            ]
         }
     ]
 
@@ -864,6 +1064,625 @@ def update_framework_comparison_params():
                 if options:
                     param["value"] = options[0]["value"]
                 break
+
+
+# ==============================================================================
+# GROUP FRAMEWORK APP - CRUD Endpoints
+# ==============================================================================
+
+# GET all groups
+@app.get("/groups")
+def get_groups():
+    """Returns all framework groups"""
+    return list(GROUPS.values())
+
+
+# POST create new group
+@app.post("/groups")
+def create_group(
+    name: str = Query(..., description="Group name"),
+    description: str = Query("", description="Group description"),
+    frameworks: str = Query("", description="Comma-separated framework series names")
+):
+    """Create a new framework group"""
+    group_id = str(uuid.uuid4())[:8]
+
+    # Parse frameworks from comma-separated string
+    framework_list = [f.strip() for f in frameworks.split(',') if f.strip()] if frameworks else []
+
+    # Validate frameworks exist
+    valid_frameworks = [f for f in framework_list if f in ALL_SERIES]
+
+    GROUPS[group_id] = {
+        "group_id": group_id,
+        "name": name,
+        "description": description,
+        "frameworks": valid_frameworks,
+        "created_at": datetime.now().isoformat()
+    }
+
+    save_groups()
+    return GROUPS[group_id]
+
+
+# PUT update existing group
+@app.put("/groups/{group_id}")
+def update_group(
+    group_id: str,
+    name: Optional[str] = Query(None, description="New group name"),
+    description: Optional[str] = Query(None, description="New group description"),
+    frameworks: Optional[str] = Query(None, description="Comma-separated framework series names")
+):
+    """Update an existing framework group"""
+    if group_id not in GROUPS:
+        raise HTTPException(status_code=404, detail=f"Group {group_id} not found")
+
+    if name is not None:
+        GROUPS[group_id]["name"] = name
+    if description is not None:
+        GROUPS[group_id]["description"] = description
+    if frameworks is not None:
+        framework_list = [f.strip() for f in frameworks.split(',') if f.strip()]
+        valid_frameworks = [f for f in framework_list if f in ALL_SERIES]
+        GROUPS[group_id]["frameworks"] = valid_frameworks
+
+    GROUPS[group_id]["updated_at"] = datetime.now().isoformat()
+    save_groups()
+    return GROUPS[group_id]
+
+
+# DELETE group
+@app.delete("/groups/{group_id}")
+def delete_group(group_id: str):
+    """Delete a framework group"""
+    if group_id not in GROUPS:
+        raise HTTPException(status_code=404, detail=f"Group {group_id} not found")
+
+    deleted = GROUPS.pop(group_id)
+    save_groups()
+    return {"message": f"Group '{deleted['name']}' deleted successfully"}
+
+
+# ==============================================================================
+# GROUP FRAMEWORK APP - Dropdown Options Endpoints
+# ==============================================================================
+
+# Get group options for dropdown (by ID)
+@app.get("/group-options")
+def get_group_options():
+    """Returns all groups as options for dropdown (value=id, label=name)"""
+    options = [
+        {"value": g["group_id"], "label": g["name"]}
+        for g in GROUPS.values()
+    ]
+    return sorted(options, key=lambda x: x["label"])
+
+
+# Get group options for dropdown (by name)
+@app.get("/group-name-options")
+def get_group_name_options():
+    """Returns all groups as options for dropdown (value=name, label=name)"""
+    options = [
+        {"value": g["name"], "label": g["name"]}
+        for g in GROUPS.values()
+    ]
+    return sorted(options, key=lambda x: x["label"])
+
+
+# Get frameworks filtered by group (by ID)
+@app.get("/group-frameworks")
+def get_group_frameworks(
+    group_id: Optional[str] = Query(None, description="Group ID to filter frameworks")
+):
+    """Returns frameworks within a specific group as dropdown options"""
+    if not group_id or group_id not in GROUPS:
+        # Return all frameworks if no group specified
+        return [{"value": name, "label": name} for name in sorted(ALL_SERIES.keys())]
+
+    group = GROUPS[group_id]
+    return [
+        {"value": name, "label": name}
+        for name in sorted(group.get("frameworks", []))
+    ]
+
+
+# Get frameworks filtered by group (by name)
+@app.get("/group-frameworks-by-name")
+def get_group_frameworks_by_name(
+    group_name: Optional[str] = Query(None, description="Group name to filter frameworks")
+):
+    """Returns frameworks within a specific group (by name) as dropdown options"""
+    if not group_name:
+        # Return all frameworks if no group specified
+        return [{"value": name, "label": name} for name in sorted(ALL_SERIES.keys())]
+
+    # Find group by name
+    group = next((g for g in GROUPS.values() if g["name"] == group_name), None)
+    if not group:
+        return [{"value": name, "label": name} for name in sorted(ALL_SERIES.keys())]
+
+    return [
+        {"value": name, "label": name}
+        for name in sorted(group.get("frameworks", []))
+    ]
+
+
+# ==============================================================================
+# GROUP FRAMEWORK APP - Grouped Framework Comparison Widget
+# ==============================================================================
+
+@register_widget({
+    "name": "Grouped Framework Comparison",
+    "description": "Compare frameworks within a selected group",
+    "type": "table",
+    "endpoint": "grouped-framework-comparison",
+    "gridData": {"w": 40, "h": 15},
+    "params": [
+        {
+            "paramName": "group_name",
+            "description": "Select a group to filter frameworks",
+            "label": "Group",
+            "type": "endpoint",
+            "optionsEndpoint": "group-name-options",
+            "show": True
+        },
+        {
+            "paramName": "series_name",
+            "description": "Select frameworks to compare",
+            "label": "Frameworks",
+            "type": "endpoint",
+            "optionsEndpoint": "group-frameworks-by-name",
+            "optionsParams": {"group_name": "$group_name"},
+            "multiSelect": True,
+            "style": {"popupWidth": 900},
+            "show": True
+        }
+    ],
+    "data": {
+        "table": {
+            "enableCharts": True,
+            "showAll": True,
+            "chartView": {
+                "enabled": True,
+                "chartType": "line"
+            }
+        }
+    }
+})
+@app.get("/grouped-framework-comparison")
+def get_grouped_framework_comparison(
+    group_name: Optional[str] = Query(None, description="Group name"),
+    series_name: Optional[str] = Query(None, description="Comma-separated series names")
+):
+    """Compare frameworks within a group, with date as common index"""
+    if not series_name:
+        raise HTTPException(
+            status_code=400,
+            detail="Please select at least one framework to compare"
+        )
+
+    # Parse comma-separated series names
+    selected_series = [s.strip() for s in series_name.split(',')]
+
+    # If group specified by name, find it and validate frameworks
+    if group_name:
+        # Find group by name
+        group = next((g for g in GROUPS.values() if g["name"] == group_name), None)
+        if group:
+            group_frameworks = set(group.get("frameworks", []))
+            selected_series = [s for s in selected_series if s in group_frameworks]
+
+    # Collect data for each selected series
+    combined_data = {}
+    dates_set = set()
+
+    for sname in selected_series:
+        if sname in ALL_SERIES:
+            item = ALL_SERIES[sname]
+            series_data = item.get('series', [])
+
+            if isinstance(series_data, str):
+                try:
+                    series_data = json.loads(series_data)
+                except:
+                    continue
+
+            if isinstance(series_data, list):
+                for point in series_data:
+                    date = point.get('date')
+                    value = point.get('value')
+                    if date:
+                        dates_set.add(date)
+                        if date not in combined_data:
+                            combined_data[date] = {}
+                        combined_data[date][sname] = value
+
+    # Convert to list format
+    if combined_data:
+        result = []
+        for date in sorted(dates_set):
+            row = {'date': date}
+            row.update(combined_data.get(date, {}))
+            result.append(row)
+        return result
+
+    return []
+
+
+# ==============================================================================
+# GROUP FRAMEWORK APP - Framework Library & Group Manager Widget (with Form)
+# ==============================================================================
+
+@register_widget({
+    "name": "Framework Library & Group Manager",
+    "description": "View and create framework groups",
+    "type": "table",
+    "endpoint": "group-manager",
+    "gridData": {"w": 40, "h": 12},
+    "data": {
+        "table": {
+            "enableCharts": False,
+            "showAll": True
+        }
+    },
+    "params": [
+        {
+            "paramName": "form",
+            "type": "form",
+            "label": "Create Group",
+            "description": "Create new workbook group",
+            "endpoint": "create-group-form",
+            "inputParams": [
+                {
+                    "paramName": "name",
+                    "label": "Group Name",
+                    "type": "text",
+                    "value": "",
+                    "description": "Enter a name for your group"
+                },
+                {
+                    "paramName": "description",
+                    "label": "Description",
+                    "type": "text",
+                    "value": "",
+                    "description": "Optional description"
+                },
+                {
+                    "paramName": "frameworks",
+                    "label": "Select Frameworks",
+                    "type": "endpoint",
+                    "multiSelect": True,
+                    "optionsEndpoint": "series-options",
+                    "style": {"popupWidth": 900},
+                    "description": "Select frameworks to include in this group"
+                },
+                {
+                    "paramName": "submit",
+                    "label": "Create Group",
+                    "type": "button",
+                    "value": True
+                }
+            ]
+        }
+    ]
+})
+@app.get("/group-manager")
+def get_group_manager():
+    """Returns all groups with their frameworks as a table"""
+    if not GROUPS:
+        return []
+
+    result = []
+    for group in GROUPS.values():
+        # Join framework names with commas
+        frameworks_str = ", ".join(group.get("frameworks", []))
+        result.append({
+            "name": group.get("name", ""),
+            "description": group.get("description", ""),
+            "frameworks": frameworks_str
+        })
+
+    return sorted(result, key=lambda x: x["name"])
+
+
+# POST endpoint for creating groups via form
+@app.post("/create-group-form")
+async def create_group_form(params: dict = None):
+    """Handle form submission for creating a new group"""
+    from fastapi import Request
+    import json as json_module
+
+    # FastAPI may pass params differently, handle both cases
+    if params is None:
+        params = {}
+
+    name = params.get("name", "")
+    description = params.get("description", "")
+    frameworks = params.get("frameworks", "")
+
+    if not name:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Group name is required"}
+        )
+
+    group_id = str(uuid.uuid4())[:8]
+
+    # Parse frameworks - could be string or list
+    if isinstance(frameworks, str):
+        framework_list = [f.strip() for f in frameworks.split(',') if f.strip()]
+    elif isinstance(frameworks, list):
+        framework_list = frameworks
+    else:
+        framework_list = []
+
+    # Validate frameworks exist
+    valid_frameworks = [f for f in framework_list if f in ALL_SERIES]
+
+    GROUPS[group_id] = {
+        "group_id": group_id,
+        "name": name,
+        "description": description,
+        "frameworks": valid_frameworks,
+        "created_at": datetime.now().isoformat()
+    }
+
+    save_groups()
+    return JSONResponse(content={"success": True, "group_id": group_id, "message": f"Group '{name}' created"})
+
+
+# ==============================================================================
+# GROUP FRAMEWORK APP - Update Group Widget (with Form)
+# ==============================================================================
+
+@register_widget({
+    "name": "Update Group",
+    "description": "Edit or delete existing groups",
+    "type": "table",
+    "endpoint": "update-group-info",
+    "gridData": {"w": 40, "h": 8},
+    "data": {
+        "table": {
+            "enableCharts": False,
+            "showAll": True
+        }
+    },
+    "params": [
+        {
+            "paramName": "form",
+            "type": "form",
+            "label": "Manage Group",
+            "description": "Update framework form",
+            "endpoint": "manage-group-form",
+            "inputParams": [
+                {
+                    "paramName": "group_id",
+                    "label": "Select Group",
+                    "type": "endpoint",
+                    "optionsEndpoint": "group-options",
+                    "value": "",
+                    "description": "Choose a group to manage"
+                },
+                {
+                    "paramName": "action",
+                    "label": "Action",
+                    "type": "text",
+                    "value": "edit",
+                    "options": [
+                        {"label": "Edit", "value": "edit"},
+                        {"label": "Delete", "value": "delete"}
+                    ],
+                    "description": "Select action to perform"
+                },
+                {
+                    "paramName": "new_name",
+                    "label": "New Name (for Edit)",
+                    "type": "text",
+                    "value": "",
+                    "description": "Leave empty to keep current name"
+                },
+                {
+                    "paramName": "new_frameworks",
+                    "label": "New Frameworks (for Edit)",
+                    "type": "endpoint",
+                    "multiSelect": True,
+                    "optionsEndpoint": "series-options",
+                    "style": {"popupWidth": 900},
+                    "description": "Select new frameworks (replaces existing)"
+                },
+                {
+                    "paramName": "submit",
+                    "label": "Update Group",
+                    "type": "button",
+                    "value": True
+                }
+            ]
+        }
+    ]
+})
+@app.get("/update-group-info")
+def get_update_group_info():
+    """Returns groups as a table for updating"""
+    if not GROUPS:
+        return []
+
+    result = []
+    for group in GROUPS.values():
+        # Join framework names with commas
+        frameworks_str = ", ".join(group.get("frameworks", []))
+        result.append({
+            "group_id": group.get("group_id", ""),
+            "name": group.get("name", ""),
+            "description": group.get("description", ""),
+            "frameworks": frameworks_str,
+            "framework_count": len(group.get("frameworks", []))
+        })
+
+    return sorted(result, key=lambda x: x["name"])
+
+
+# POST endpoint for managing groups via form
+@app.post("/manage-group-form")
+async def manage_group_form(params: dict = None):
+    """Handle form submission for managing groups"""
+    if params is None:
+        params = {}
+
+    group_id = params.get("group_id", "")
+    action = params.get("action", "")
+    new_name = params.get("new_name", "")
+    new_frameworks = params.get("new_frameworks", "")
+
+    if not group_id:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Please select a group"}
+        )
+
+    if group_id not in GROUPS:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Group {group_id} not found"}
+        )
+
+    if action == "delete":
+        deleted = GROUPS.pop(group_id)
+        save_groups()
+        return JSONResponse(content={"success": True, "message": f"Group '{deleted['name']}' deleted"})
+
+    elif action == "edit":
+        if new_name:
+            GROUPS[group_id]["name"] = new_name
+
+        if new_frameworks:
+            # Parse frameworks - could be string or list
+            if isinstance(new_frameworks, str):
+                framework_list = [f.strip() for f in new_frameworks.split(',') if f.strip()]
+            elif isinstance(new_frameworks, list):
+                framework_list = new_frameworks
+            else:
+                framework_list = []
+
+            valid_frameworks = [f for f in framework_list if f in ALL_SERIES]
+            GROUPS[group_id]["frameworks"] = valid_frameworks
+
+        GROUPS[group_id]["updated_at"] = datetime.now().isoformat()
+        save_groups()
+        return JSONResponse(content={"success": True, "message": f"Group '{GROUPS[group_id]['name']}' updated"})
+
+    else:
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"Invalid action: {action}. Use 'edit' or 'delete'"}
+        )
+
+
+# Legacy endpoint (keeping for backwards compatibility)
+@app.post("/manage-group")
+def manage_group(
+    group_id: str = Query(..., description="Group ID"),
+    action: str = Query(..., description="Action: edit or delete"),
+    new_name: Optional[str] = Query(None, description="New name for edit"),
+    new_frameworks: Optional[str] = Query(None, description="New frameworks for edit")
+):
+    """Handle group edit or delete actions (legacy endpoint)"""
+    if group_id not in GROUPS:
+        raise HTTPException(status_code=404, detail=f"Group {group_id} not found")
+
+    if action == "delete":
+        deleted = GROUPS.pop(group_id)
+        save_groups()
+        return {"message": f"Group '{deleted['name']}' deleted successfully"}
+
+    elif action == "edit":
+        if new_name:
+            GROUPS[group_id]["name"] = new_name
+        if new_frameworks:
+            framework_list = [f.strip() for f in new_frameworks.split(',') if f.strip()]
+            valid_frameworks = [f for f in framework_list if f in ALL_SERIES]
+            GROUPS[group_id]["frameworks"] = valid_frameworks
+
+        GROUPS[group_id]["updated_at"] = datetime.now().isoformat()
+        save_groups()
+        return {"message": f"Group '{GROUPS[group_id]['name']}' updated successfully"}
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid action: {action}")
+
+
+# ==============================================================================
+# GROUP FRAMEWORK APP - Groups List Widget
+# ==============================================================================
+
+@register_widget({
+    "name": "Groups List",
+    "description": "View all created groups - click a group to update comparison",
+    "type": "table",
+    "endpoint": "groups-list",
+    "gridData": {"w": 40, "h": 10},
+    "data": {
+        "table": {
+            "enableCharts": False,
+            "showAll": True,
+            "columnsDefs": [
+                {
+                    "field": "name",
+                    "headerName": "Select",
+                    "cellDataType": "text",
+                    "pinned": "left",
+                    "renderFn": "cellOnClick",
+                    "renderFnParams": {
+                        "actionType": "groupBy",
+                        "groupByParamName": "group_name"
+                    }
+                },
+                {
+                    "field": "description",
+                    "headerName": "Description",
+                    "cellDataType": "text"
+                },
+                {
+                    "field": "framework_count",
+                    "headerName": "Frameworks",
+                    "cellDataType": "number"
+                },
+                {
+                    "field": "created_at",
+                    "headerName": "Created At",
+                    "cellDataType": "text"
+                }
+            ]
+        }
+    },
+    "params": [
+        {
+            "paramName": "group_name",
+            "description": "Selected group",
+            "label": "Group",
+            "type": "endpoint",
+            "optionsEndpoint": "group-name-options",
+            "show": False
+        }
+    ]
+})
+@app.get("/groups-list")
+def get_groups_list(
+    group_name: Optional[str] = Query(None, description="Selected group name (for groupBy sync)")
+):
+    """Returns all groups as a table"""
+    if not GROUPS:
+        return []
+
+    result = []
+    for group in GROUPS.values():
+        result.append({
+            "name": group["name"],
+            "description": group.get("description", ""),
+            "framework_count": len(group.get("frameworks", [])),
+            "created_at": group.get("created_at", "")
+        })
+
+    return sorted(result, key=lambda x: x["name"])
 
 
 # Status widget
