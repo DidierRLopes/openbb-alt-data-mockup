@@ -570,8 +570,7 @@ def get_apps():
         'framework-comparison',
         'series-list',
         # Group Framework app widgets - keep separate from Carbon Arc Frameworks
-        'group-manager',
-        'update-group-info',
+        'group-manager-html',
         'groups-list',
         'grouped-framework-comparison'
     }
@@ -736,28 +735,11 @@ def get_apps():
                     "name": "",
                     "layout": [
                         {
-                            "i": "group-manager",
+                            "i": "group-manager-html",
                             "x": 0,
                             "y": 0,
                             "w": 40,
-                            "h": 9,
-                            "state": {
-                                "chartView": {
-                                    "enabled": False,
-                                    "chartType": "line"
-                                },
-                                "columnState": {
-                                    "default": {
-                                        "columnOrder": {
-                                            "orderedColIds": [
-                                                "name",
-                                                "description",
-                                                "frameworks"
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
+                            "h": 16,
                             "groups": []
                         },
                         {
@@ -765,7 +747,7 @@ def get_apps():
                             "x": 0,
                             "y": 16,
                             "w": 40,
-                            "h": 12,
+                            "h": 10,
                             "state": {
                                 "chartView": {
                                     "enabled": False,
@@ -784,44 +766,16 @@ def get_apps():
                                                 "framework_count",
                                                 "created_at"
                                             ]
-                                        },
-                                        "rowSelection": ["1"]
+                                        }
                                     }
                                 }
                             },
                             "groups": ["Group 1", "Group 2"]
                         },
                         {
-                            "i": "update-group-info",
-                            "x": 0,
-                            "y": 9,
-                            "w": 40,
-                            "h": 7,
-                            "state": {
-                                "chartView": {
-                                    "enabled": False,
-                                    "chartType": "line"
-                                },
-                                "columnState": {
-                                    "default": {
-                                        "columnOrder": {
-                                            "orderedColIds": [
-                                                "group_id",
-                                                "name",
-                                                "description",
-                                                "frameworks",
-                                                "framework_count"
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
-                            "groups": []
-                        },
-                        {
                             "i": "grouped-framework-comparison",
                             "x": 0,
-                            "y": 28,
+                            "y": 26,
                             "w": 40,
                             "h": 15,
                             "state": {
@@ -830,7 +784,6 @@ def get_apps():
                                     "group_name": "Theo",
                                     "series_name": [
                                         "Amazon | Average Website Traffic | Desktop Site | Male | Gender | v2025.11.1 | Reinstated On: 2025-12-01",
-                                        "Brilliant Earth | Advertising Count | Facebook | v2025.11.1 | Reinstated On: 2025-11-29",
                                         "Amazon | Average Website Traffic | Mobile Site | Female | Gender | v2025.11.1 | Reinstated On: 2025-12-01"
                                     ]
                                 },
@@ -1322,274 +1275,45 @@ def get_grouped_framework_comparison(
 
 
 # ==============================================================================
-# GROUP FRAMEWORK APP - Framework Library & Group Manager Widget (with Form)
+# GROUP FRAMEWORK APP - Group Manager HTML Widget
 # ==============================================================================
+
+# Load the HTML widget content
+GROUP_MANAGER_HTML_FILE = Path(__file__).parent / "group_manager_widget.html"
+
 
 @register_widget({
-    "name": "Framework Library & Group Manager",
-    "description": "View and create framework groups",
-    "type": "table",
-    "endpoint": "group-manager",
-    "gridData": {"w": 40, "h": 12},
-    "data": {
-        "table": {
-            "enableCharts": False,
-            "showAll": True
-        }
-    },
-    "params": [
-        {
-            "paramName": "form",
-            "type": "form",
-            "label": "Create Group",
-            "description": "Create new workbook group",
-            "endpoint": "create-group-form",
-            "inputParams": [
-                {
-                    "paramName": "name",
-                    "label": "Group Name",
-                    "type": "text",
-                    "value": "",
-                    "description": "Enter a name for your group"
-                },
-                {
-                    "paramName": "description",
-                    "label": "Description",
-                    "type": "text",
-                    "value": "",
-                    "description": "Optional description"
-                },
-                {
-                    "paramName": "frameworks",
-                    "label": "Select Frameworks",
-                    "type": "endpoint",
-                    "multiSelect": True,
-                    "optionsEndpoint": "series-options",
-                    "style": {"popupWidth": 900},
-                    "description": "Select frameworks to include in this group"
-                },
-                {
-                    "paramName": "submit",
-                    "label": "Create Group",
-                    "type": "button",
-                    "value": True
-                }
-            ]
-        }
-    ]
+    "name": "Group Manager",
+    "description": "Create, edit, and manage framework groups",
+    "type": "html",
+    "endpoint": "group-manager-html",
+    "gridData": {"w": 40, "h": 16}
 })
-@app.get("/group-manager")
-def get_group_manager():
-    """Returns all groups with their frameworks as a table"""
-    if not GROUPS:
-        return []
+@app.get("/group-manager-html")
+def get_group_manager_html():
+    """Returns the HTML widget for group management"""
+    from fastapi.responses import HTMLResponse
 
-    result = []
-    for group in GROUPS.values():
-        # Join framework names with commas
-        frameworks_str = ", ".join(group.get("frameworks", []))
-        result.append({
-            "name": group.get("name", ""),
-            "description": group.get("description", ""),
-            "frameworks": frameworks_str
-        })
+    if GROUP_MANAGER_HTML_FILE.exists():
+        with open(GROUP_MANAGER_HTML_FILE, 'r') as f:
+            html_content = f.read()
 
-    return sorted(result, key=lambda x: x["name"])
+        # Inject the backend URL directly into the HTML
+        # This ensures the widget knows where to make API calls
+        backend_url = "http://127.0.0.1:8037"
 
-
-# POST endpoint for creating groups via form
-@app.post("/create-group-form")
-async def create_group_form(params: dict = None):
-    """Handle form submission for creating a new group"""
-    from fastapi import Request
-    import json as json_module
-
-    # FastAPI may pass params differently, handle both cases
-    if params is None:
-        params = {}
-
-    name = params.get("name", "")
-    description = params.get("description", "")
-    frameworks = params.get("frameworks", "")
-
-    if not name:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Group name is required"}
+        # Replace the getApiBase function with a simple constant
+        html_content = html_content.replace(
+            "const API_BASE = getApiBase();",
+            f'const API_BASE = "{backend_url}"; // Injected by backend'
         )
 
-    group_id = str(uuid.uuid4())[:8]
-
-    # Parse frameworks - could be string or list
-    if isinstance(frameworks, str):
-        framework_list = [f.strip() for f in frameworks.split(',') if f.strip()]
-    elif isinstance(frameworks, list):
-        framework_list = frameworks
+        return HTMLResponse(content=html_content)
     else:
-        framework_list = []
-
-    # Validate frameworks exist
-    valid_frameworks = [f for f in framework_list if f in ALL_SERIES]
-
-    GROUPS[group_id] = {
-        "group_id": group_id,
-        "name": name,
-        "description": description,
-        "frameworks": valid_frameworks,
-        "created_at": datetime.now().isoformat()
-    }
-
-    save_groups()
-    return JSONResponse(content={"success": True, "group_id": group_id, "message": f"Group '{name}' created"})
+        return HTMLResponse(content="<html><body><p>Widget not found</p></body></html>")
 
 
-# ==============================================================================
-# GROUP FRAMEWORK APP - Update Group Widget (with Form)
-# ==============================================================================
-
-@register_widget({
-    "name": "Update Group",
-    "description": "Edit or delete existing groups",
-    "type": "table",
-    "endpoint": "update-group-info",
-    "gridData": {"w": 40, "h": 8},
-    "data": {
-        "table": {
-            "enableCharts": False,
-            "showAll": True
-        }
-    },
-    "params": [
-        {
-            "paramName": "form",
-            "type": "form",
-            "label": "Manage Group",
-            "description": "Update framework form",
-            "endpoint": "manage-group-form",
-            "inputParams": [
-                {
-                    "paramName": "group_id",
-                    "label": "Select Group",
-                    "type": "endpoint",
-                    "optionsEndpoint": "group-options",
-                    "value": "",
-                    "description": "Choose a group to manage"
-                },
-                {
-                    "paramName": "action",
-                    "label": "Action",
-                    "type": "text",
-                    "value": "edit",
-                    "options": [
-                        {"label": "Edit", "value": "edit"},
-                        {"label": "Delete", "value": "delete"}
-                    ],
-                    "description": "Select action to perform"
-                },
-                {
-                    "paramName": "new_name",
-                    "label": "New Name (for Edit)",
-                    "type": "text",
-                    "value": "",
-                    "description": "Leave empty to keep current name"
-                },
-                {
-                    "paramName": "new_frameworks",
-                    "label": "New Frameworks (for Edit)",
-                    "type": "endpoint",
-                    "multiSelect": True,
-                    "optionsEndpoint": "series-options",
-                    "style": {"popupWidth": 900},
-                    "description": "Select new frameworks (replaces existing)"
-                },
-                {
-                    "paramName": "submit",
-                    "label": "Update Group",
-                    "type": "button",
-                    "value": True
-                }
-            ]
-        }
-    ]
-})
-@app.get("/update-group-info")
-def get_update_group_info():
-    """Returns groups as a table for updating"""
-    if not GROUPS:
-        return []
-
-    result = []
-    for group in GROUPS.values():
-        # Join framework names with commas
-        frameworks_str = ", ".join(group.get("frameworks", []))
-        result.append({
-            "group_id": group.get("group_id", ""),
-            "name": group.get("name", ""),
-            "description": group.get("description", ""),
-            "frameworks": frameworks_str,
-            "framework_count": len(group.get("frameworks", []))
-        })
-
-    return sorted(result, key=lambda x: x["name"])
-
-
-# POST endpoint for managing groups via form
-@app.post("/manage-group-form")
-async def manage_group_form(params: dict = None):
-    """Handle form submission for managing groups"""
-    if params is None:
-        params = {}
-
-    group_id = params.get("group_id", "")
-    action = params.get("action", "")
-    new_name = params.get("new_name", "")
-    new_frameworks = params.get("new_frameworks", "")
-
-    if not group_id:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Please select a group"}
-        )
-
-    if group_id not in GROUPS:
-        return JSONResponse(
-            status_code=404,
-            content={"error": f"Group {group_id} not found"}
-        )
-
-    if action == "delete":
-        deleted = GROUPS.pop(group_id)
-        save_groups()
-        return JSONResponse(content={"success": True, "message": f"Group '{deleted['name']}' deleted"})
-
-    elif action == "edit":
-        if new_name:
-            GROUPS[group_id]["name"] = new_name
-
-        if new_frameworks:
-            # Parse frameworks - could be string or list
-            if isinstance(new_frameworks, str):
-                framework_list = [f.strip() for f in new_frameworks.split(',') if f.strip()]
-            elif isinstance(new_frameworks, list):
-                framework_list = new_frameworks
-            else:
-                framework_list = []
-
-            valid_frameworks = [f for f in framework_list if f in ALL_SERIES]
-            GROUPS[group_id]["frameworks"] = valid_frameworks
-
-        GROUPS[group_id]["updated_at"] = datetime.now().isoformat()
-        save_groups()
-        return JSONResponse(content={"success": True, "message": f"Group '{GROUPS[group_id]['name']}' updated"})
-
-    else:
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Invalid action: {action}. Use 'edit' or 'delete'"}
-        )
-
-
-# Legacy endpoint (keeping for backwards compatibility)
+# Legacy endpoints kept for backwards compatibility with the HTML widget
 @app.post("/manage-group")
 def manage_group(
     group_id: str = Query(..., description="Group ID"),
