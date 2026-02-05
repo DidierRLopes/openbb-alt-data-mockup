@@ -1289,7 +1289,7 @@ GROUP_MANAGER_HTML_FILE = Path(__file__).parent / "group_manager_widget.html"
     "gridData": {"w": 40, "h": 16}
 })
 @app.get("/group-manager-html")
-def get_group_manager_html():
+def get_group_manager_html(theme: str = "dark"):
     """Returns the HTML widget for group management"""
     from fastapi.responses import HTMLResponse
 
@@ -1297,14 +1297,17 @@ def get_group_manager_html():
         with open(GROUP_MANAGER_HTML_FILE, 'r') as f:
             html_content = f.read()
 
-        # Inject the backend URL directly into the HTML
-        # This ensures the widget knows where to make API calls
+        # Inject the backend URL
         backend_url = "http://127.0.0.1:8037"
-
-        # Replace the getApiBase function with a simple constant
         html_content = html_content.replace(
             "const API_BASE = getApiBase();",
             f'const API_BASE = "{backend_url}"; // Injected by backend'
+        )
+
+        # Inject the theme
+        html_content = html_content.replace(
+            "const theme = urlParams.get('theme') || 'dark';",
+            f"const theme = '{theme}';"
         )
 
         return HTMLResponse(content=html_content)

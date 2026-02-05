@@ -184,15 +184,17 @@
     }
 
     .btn-icon {
-      width: 26px;
-      height: 26px;
+      width: 22px;
+      height: 22px;
       padding: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: var(--background-alt);
+      background: transparent;
+      border: none;
       border-radius: var(--radius);
-      color: var(--foreground-muted);
+      color: var(--foreground-subtle);
+      cursor: pointer;
     }
 
     .btn-icon:hover {
@@ -204,6 +206,11 @@
       width: 14px;
       height: 14px;
       flex-shrink: 0;
+    }
+
+    .btn-icon svg {
+      width: 12px;
+      height: 12px;
     }
 
     /* Table Container */
@@ -296,15 +303,13 @@
     .framework-tag {
       display: inline-flex;
       align-items: center;
+      gap: 2px;
       padding: 2px 6px;
       font-size: 10px;
       background: rgba(0, 170, 255, 0.15);
       color: var(--brand-main);
       border-radius: 10px;
-      max-width: 180px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      max-width: 200px;
     }
 
     .dark .framework-tag {
@@ -312,9 +317,127 @@
       color: var(--brand-lighter);
     }
 
+    .framework-tag-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .framework-tag-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 12px;
+      height: 12px;
+      cursor: pointer;
+      opacity: 0.6;
+      flex-shrink: 0;
+    }
+
+    .framework-tag-remove:hover {
+      opacity: 1;
+    }
+
+    .framework-tag-remove svg {
+      width: 10px;
+      height: 10px;
+    }
+
     .framework-more {
       font-size: 10px;
       color: var(--foreground-subtle);
+      cursor: pointer;
+    }
+
+    .framework-more:hover {
+      color: var(--foreground-muted);
+    }
+
+    /* Inline Framework Add */
+    .framework-add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      background: var(--background-hover);
+      border: 1px dashed var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      color: var(--foreground-subtle);
+      transition: all var(--transition);
+    }
+
+    .framework-add-btn:hover {
+      background: var(--background-alt);
+      border-color: var(--brand-main);
+      color: var(--brand-main);
+    }
+
+    .framework-add-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    /* Inline Autocomplete */
+    .inline-autocomplete-container {
+      position: relative;
+      display: inline-block;
+      min-width: 150px;
+    }
+
+    .inline-autocomplete-input {
+      width: 100%;
+      height: 22px;
+      padding: 0 6px;
+      font-size: 11px;
+      font-family: var(--font-family);
+      background: var(--input-bg);
+      border: 1px solid var(--brand-main);
+      border-radius: 10px;
+      color: var(--foreground);
+    }
+
+    .inline-autocomplete-input:focus {
+      outline: none;
+    }
+
+    .inline-autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 250px;
+      max-width: 350px;
+      margin-top: 4px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 300;
+    }
+
+    .inline-autocomplete-option {
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--foreground);
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .inline-autocomplete-option:hover,
+    .inline-autocomplete-option.highlighted {
+      background: var(--background-hover);
+    }
+
+    .inline-autocomplete-empty {
+      padding: 10px;
+      text-align: center;
+      color: var(--foreground-subtle);
+      font-size: 11px;
     }
 
     .cell-date {
@@ -1003,8 +1126,7 @@
     let editingGroupId = null;
     let contextGroupId = null;
 
-    // Theme
-    const urlParams = new URLSearchParams(window.location.search);
+    // Theme - injected by backend
     const theme = urlParams.get('theme') || 'dark';
     if (theme === 'dark') {
       document.body.classList.add('dark');
@@ -1061,11 +1183,25 @@
       }
 
       const rows = groups.map(group => {
-        const frameworkTags = group.frameworks.slice(0, 2).map(f => {
+        const frameworkTags = group.frameworks.slice(0, 3).map(f => {
           const shortName = f.split(' | ').slice(0, 2).join(' | ');
-          return `<span class="framework-tag" title="${escapeHtml(f)}">${escapeHtml(shortName)}</span>`;
+          return `<span class="framework-tag" title="${escapeHtml(f)}">
+            <span class="framework-tag-remove" onclick="removeFrameworkFromGroup(event, '${group.group_id}', '${escapeAttr(f)}')" title="Remove">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </span>
+            <span class="framework-tag-text">${escapeHtml(shortName)}</span>
+          </span>`;
         }).join('');
-        const moreCount = group.frameworks.length > 2 ? `<span class="framework-more">+${group.frameworks.length - 2} more</span>` : '';
+        const moreCount = group.frameworks.length > 3
+          ? `<span class="framework-more" onclick="openEditModal('${group.group_id}')" title="Click to edit all frameworks">+${group.frameworks.length - 3} more</span>`
+          : '';
+        const addBtn = `<span class="framework-add-btn" onclick="startInlineFrameworkAdd(event, '${group.group_id}')" title="Add framework">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </span>`;
         const createdDate = new Date(group.created_at).toLocaleDateString();
 
         return `
@@ -1077,7 +1213,7 @@
               <span class="cell-description" onclick="startInlineEdit(this, '${group.group_id}', 'description')">${escapeHtml(group.description) || '—'}</span>
             </td>
             <td class="cell-frameworks">
-              <div class="framework-tags">${frameworkTags}${moreCount}</div>
+              <div class="framework-tags" data-group-id="${group.group_id}">${frameworkTags}${moreCount}${addBtn}</div>
             </td>
             <td class="cell-date">${createdDate}</td>
             <td class="cell-actions">
@@ -1468,6 +1604,197 @@
       div.textContent = text;
       return div.innerHTML;
     }
+
+    function escapeAttr(text) {
+      if (!text) return '';
+      return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // Inline Framework Management
+    async function removeFrameworkFromGroup(event, groupId, frameworkName) {
+      event.stopPropagation();
+
+      const group = groups.find(g => g.group_id === groupId);
+      if (!group) return;
+
+      const updatedFrameworks = group.frameworks.filter(f => f !== frameworkName);
+      const params = new URLSearchParams({
+        frameworks: updatedFrameworks.join(',')
+      });
+
+      try {
+        const response = await fetch(`${API_BASE}/groups/${groupId}?${params}`, { method: 'PUT' });
+        if (response.ok) {
+          showToast('Framework removed', 'success');
+          await loadGroups();
+        } else {
+          showToast('Failed to remove framework', 'error');
+        }
+      } catch (error) {
+        showToast('Failed to remove framework', 'error');
+      }
+    }
+
+    let activeAutocomplete = null;
+
+    function startInlineFrameworkAdd(event, groupId) {
+      event.stopPropagation();
+
+      // Close any existing autocomplete
+      closeInlineAutocomplete();
+
+      const group = groups.find(g => g.group_id === groupId);
+      if (!group) return;
+
+      const addBtn = event.currentTarget;
+      const container = document.createElement('div');
+      container.className = 'inline-autocomplete-container';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'inline-autocomplete-input';
+      input.placeholder = 'Type to search...';
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'inline-autocomplete-dropdown';
+      dropdown.style.display = 'none';
+
+      container.appendChild(input);
+      container.appendChild(dropdown);
+
+      addBtn.style.display = 'none';
+      addBtn.parentNode.insertBefore(container, addBtn);
+
+      activeAutocomplete = { container, input, dropdown, addBtn, groupId, group, highlightIndex: -1 };
+
+      input.focus();
+
+      input.addEventListener('input', () => updateAutocompleteOptions());
+      input.addEventListener('keydown', handleAutocompleteKeydown);
+      input.addEventListener('blur', (e) => {
+        // Delay to allow click on option
+        setTimeout(() => {
+          if (!container.contains(document.activeElement)) {
+            closeInlineAutocomplete();
+          }
+        }, 150);
+      });
+
+      // Show initial options
+      updateAutocompleteOptions();
+    }
+
+    function updateAutocompleteOptions() {
+      if (!activeAutocomplete) return;
+
+      const { input, dropdown, group } = activeAutocomplete;
+      const filter = input.value.toLowerCase();
+
+      // Filter out already selected frameworks
+      const available = frameworks.filter(f => {
+        const value = typeof f === 'object' ? f.value : f;
+        return !group.frameworks.includes(value) && value.toLowerCase().includes(filter);
+      }).slice(0, 10);
+
+      if (available.length === 0) {
+        dropdown.innerHTML = '<div class="inline-autocomplete-empty">No matching frameworks</div>';
+        dropdown.style.display = 'block';
+        activeAutocomplete.highlightIndex = -1;
+        return;
+      }
+
+      dropdown.innerHTML = available.map((f, idx) => {
+        const value = typeof f === 'object' ? f.value : f;
+        return `<div class="inline-autocomplete-option" data-value="${escapeAttr(value)}" data-index="${idx}" onmousedown="selectAutocompleteOption('${escapeAttr(value)}')">${escapeHtml(value)}</div>`;
+      }).join('');
+
+      dropdown.style.display = 'block';
+      activeAutocomplete.highlightIndex = -1;
+    }
+
+    function handleAutocompleteKeydown(e) {
+      if (!activeAutocomplete) return;
+
+      const { dropdown, highlightIndex } = activeAutocomplete;
+      const options = dropdown.querySelectorAll('.inline-autocomplete-option[data-value]');
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const newIndex = Math.min(highlightIndex + 1, options.length - 1);
+        setAutocompleteHighlight(newIndex);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const newIndex = Math.max(highlightIndex - 1, 0);
+        setAutocompleteHighlight(newIndex);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (highlightIndex >= 0 && options[highlightIndex]) {
+          const value = options[highlightIndex].dataset.value;
+          selectAutocompleteOption(value);
+        }
+      } else if (e.key === 'Escape') {
+        closeInlineAutocomplete();
+      }
+    }
+
+    function setAutocompleteHighlight(index) {
+      if (!activeAutocomplete) return;
+
+      const { dropdown } = activeAutocomplete;
+      const options = dropdown.querySelectorAll('.inline-autocomplete-option[data-value]');
+
+      options.forEach((opt, i) => {
+        opt.classList.toggle('highlighted', i === index);
+      });
+
+      activeAutocomplete.highlightIndex = index;
+
+      // Scroll into view
+      if (options[index]) {
+        options[index].scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    async function selectAutocompleteOption(value) {
+      if (!activeAutocomplete) return;
+
+      const { groupId, group } = activeAutocomplete;
+
+      const updatedFrameworks = [...group.frameworks, value];
+      const params = new URLSearchParams({
+        frameworks: updatedFrameworks.join(',')
+      });
+
+      closeInlineAutocomplete();
+
+      try {
+        const response = await fetch(`${API_BASE}/groups/${groupId}?${params}`, { method: 'PUT' });
+        if (response.ok) {
+          showToast('Framework added', 'success');
+          await loadGroups();
+        } else {
+          showToast('Failed to add framework', 'error');
+        }
+      } catch (error) {
+        showToast('Failed to add framework', 'error');
+      }
+    }
+
+    function closeInlineAutocomplete() {
+      if (activeAutocomplete) {
+        const { container, addBtn } = activeAutocomplete;
+        container.remove();
+        addBtn.style.display = '';
+        activeAutocomplete = null;
+      }
+    }
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', (e) => {
+      if (activeAutocomplete && !activeAutocomplete.container.contains(e.target)) {
+        closeInlineAutocomplete();
+      }
+    });
   </script>
 </body>
 </html>
