@@ -739,8 +739,7 @@ def get_apps():
                             "x": 0,
                             "y": 0,
                             "w": 40,
-                            "h": 16,
-                            "groups": []
+                            "h": 16
                         },
                         {
                             "i": "groups-list",
@@ -1352,10 +1351,11 @@ def manage_group(
 
 @register_widget({
     "name": "Groups List",
-    "description": "View all created groups - click a group to update comparison",
+    "description": "View all created groups - click Run to refresh after changes",
     "type": "table",
     "endpoint": "groups-list",
     "gridData": {"w": 40, "h": 10},
+    "runButton": True,
     "data": {
         "table": {
             "enableCharts": False,
