@@ -599,7 +599,8 @@ def get_apps():
                 },
                 "chartView": {
                     "enabled": True,
-                    "chartType": "line"
+                    "chartType": "line",
+                    "ignoreCellRange": True
                 }
             },
             "groups": []
@@ -674,7 +675,8 @@ def get_apps():
                                 },
                                 "chartView": {
                                     "enabled": True,
-                                    "chartType": "line"
+                                    "chartType": "line",
+                                    "ignoreCellRange": True
                                 },
                                 "columnState": {
                                     "default": {
@@ -1191,7 +1193,8 @@ def get_group_frameworks_by_name(
             "showAll": True,
             "chartView": {
                 "enabled": True,
-                "chartType": "line"
+                "chartType": "line",
+                "ignoreCellRange": True
             }
         }
     }
