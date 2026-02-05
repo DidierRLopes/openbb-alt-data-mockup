@@ -1255,22 +1255,34 @@ def get_grouped_framework_comparison(
     series_name: Optional[str] = Query(None, description="Comma-separated series names")
 ):
     """Compare frameworks within a group, with date as common index"""
-    if not series_name:
-        raise HTTPException(
-            status_code=400,
-            detail="Please select at least one framework to compare"
-        )
 
-    # Parse comma-separated series names
-    selected_series = [s.strip() for s in series_name.split(',')]
-
-    # If group specified by name, find it and validate frameworks
+    # Find group by name if provided
+    group = None
     if group_name:
-        # Find group by name
         group = next((g for g in GROUPS.values() if g["name"] == group_name), None)
+
+    # Determine which series to use
+    if series_name:
+        # Parse comma-separated series names
+        selected_series = [s.strip() for s in series_name.split(',')]
+        # If group specified, validate frameworks are in group
         if group:
             group_frameworks = set(group.get("frameworks", []))
             selected_series = [s for s in selected_series if s in group_frameworks]
+    elif group:
+        # No series specified but group is - automatically use ALL frameworks from group
+        selected_series = group.get("frameworks", [])
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Please select a group or at least one framework to compare"
+        )
+
+    if not selected_series:
+        raise HTTPException(
+            status_code=400,
+            detail="No frameworks found. Please select a group with frameworks or select frameworks manually."
+        )
 
     # Collect data for each selected series
     combined_data = {}
